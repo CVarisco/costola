@@ -51,3 +51,8 @@ claiming automation works.
 
 All storage paths in automated tests are temporary fixtures. Do not use the
 personal SSD or a real developer home as integration-test fixtures.
+
+The legacy scripts continue to use `~/.ssd-migration/config.json`. For a fresh
+legacy installation, provide `SSD_MIGRATION_VOLUME_UUID`; the source no longer
+contains the author's physical UUID. Costola uses its own private state under
+`~/Library/Application Support/Costola` and never imports legacy state silently.
