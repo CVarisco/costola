@@ -24,7 +24,7 @@ class PackagedWorkerTests(unittest.TestCase):
             home.mkdir()
             launcher = app / 'Contents/MacOS/CostolaAgent'
             result = subprocess.run(
-                [str(launcher)], cwd=root, capture_output=True, text=True,
+                [str(launcher), "--probe"], cwd=root, capture_output=True, text=True,
                 env={'HOME': str(home), 'PATH': ''}, timeout=30,
             )
             self.assertEqual(result.returncode, 0, result.stderr)
@@ -40,7 +40,7 @@ class PackagedWorkerTests(unittest.TestCase):
             (app / 'Contents/MacOS').mkdir(parents=True)
             launcher = app / 'Contents/MacOS/CostolaAgent'
             shutil.copy2(self.app / 'Contents/MacOS/CostolaAgent', launcher)
-            result = subprocess.run([str(launcher)], capture_output=True, text=True, timeout=15)
+            result = subprocess.run([str(launcher), "--probe"], capture_output=True, text=True, timeout=15)
             self.assertNotEqual(result.returncode, 0)
             self.assertEqual(result.stdout, '')
             self.assertIn('worker', result.stderr.lower())
@@ -64,7 +64,7 @@ class PackagedWorkerTests(unittest.TestCase):
             with archive.open('ab') as stream:
                 stream.write(b'changed')
             result = subprocess.run(
-                [str(app / 'Contents/MacOS/CostolaAgent')],
+                [str(app / 'Contents/MacOS/CostolaAgent'), '--probe'],
                 capture_output=True, text=True, timeout=30,
             )
             self.assertNotEqual(result.returncode, 0)

@@ -42,7 +42,7 @@ def main():
     # Source invocation and the frozen bundle share the same package imports.
     if not getattr(sys, 'frozen', False):
         sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-    from core.engine_api import dispatch, APIError, READ_COMMANDS, MUTATIONS
+    from core.engine_api import dispatch, APIError, READ_COMMANDS, MUTATIONS, BACKGROUND_COMMANDS
     if request.get('command') != 'info':
         from core.state import StateError
         from core.storage_manager import StorageError
@@ -64,7 +64,7 @@ def main():
             return respond(request_id, code='internal_error', message='The operation stopped unexpectedly. Inspect its recovery status before retrying.')
     return respond(request_id, data={
         'product': 'Costola',
-        'capabilities': ['info', *READ_COMMANDS, *MUTATIONS],
+        'capabilities': ['info', *READ_COMMANDS, *MUTATIONS, *BACKGROUND_COMMANDS],
         'python_version': platform.python_version(),
         'architecture': platform.machine(),
         'frozen': bool(getattr(sys, 'frozen', False)),

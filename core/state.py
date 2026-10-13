@@ -12,6 +12,10 @@ class StateError(Exception):
     pass
 
 
+class StateBusyError(StateError):
+    pass
+
+
 def apply_selection(value, ids, known_ids):
     if not isinstance(ids, list) or any(not isinstance(item, str) for item in ids):
         raise StateError('Selection must contain catalog IDs.')
@@ -84,7 +88,7 @@ class StateStore:
             try:
                 fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
             except BlockingIOError as error:
-                raise StateError('Another Costola operation is active.') from error
+                raise StateBusyError('Another Costola operation is active.') from error
             try:
                 yield
             finally:

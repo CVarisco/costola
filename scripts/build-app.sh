@@ -13,9 +13,9 @@ xcodebuild -project "$ROOT/app/StorageUtility.xcodeproj" -scheme StorageUtility 
 APP="$OUT/Xcode/Build/Products/Debug/Costola.app"
 mkdir -p "$APP/Contents/Helpers" "$APP/Contents/Library/LaunchAgents"
 ditto "$OUT/worker/CostolaWorker.app" "$APP/Contents/Helpers/CostolaWorker.app"
-cp "$OUT/Xcode/Build/Products/Debug/CostolaAgent" "$APP/Contents/MacOS/CostolaAgent"
+cp "$OUT/Xcode/Build/Products/Debug/CostolaAgent" "$APP/Contents/MacOS/CostolaAgent" --probe
 cp "$ROOT/app/StorageAgent/LaunchAgent.plist" "$APP/Contents/Library/LaunchAgents/com.cvarisco.costola.dev.agent.plist"
 codesign --force --sign - --options runtime "$APP"
 codesign --verify --deep --strict "$APP"
-"$APP/Contents/MacOS/CostolaAgent"
+"$APP/Contents/MacOS/CostolaAgent" --probe
 printf 'Development bundle: %s\n' "$APP"

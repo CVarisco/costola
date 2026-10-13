@@ -8,14 +8,15 @@ import shutil
 
 from .app_manager import AppManager
 from .device import available_volumes, resolve_volume, DeviceError
-from .state import StateError
+from .state import StateError, StateBusyError
 from .storage_manager import StorageError, GIB
 from .macos_copy import CopyError
 from .preflight import PreflightError
 
 
 READ_COMMANDS = ('status', 'discover', 'volumes', 'preview')
-MUTATIONS = ('choose_device', 'add_custom', 'select', 'setup', 'migrate', 'restore', 'recover', 'settings')
+MUTATIONS = ('choose_device', 'add_custom', 'select', 'setup', 'migrate', 'restore', 'recover', 'settings', 'automation')
+BACKGROUND_COMMANDS = ('monitor',)
 
 
 class APIError(Exception):
@@ -38,7 +39,7 @@ def status(manager):
             state = 'needs-attention'
         paths.append({'id': entry['id'], 'source': entry['source'], 'kind': entry['kind'], 'state': state})
     document = manager.document
-    return {
+    result = {
         'revision': document['revision'], 'device': document['device'],
         'online': online, 'selected': document['selected'], 'pending': document['pending'],
         'paths': paths, 'settings': document['settings'],
@@ -48,6 +49,11 @@ def status(manager):
         'internal_free_bytes': shutil.disk_usage(manager.home).free,
         'legacy_conflict': manager.legacy_conflicts(),
     }
+    result['automation_enabled'] = document.get('automation_enabled', False)
+    monitor_path = manager.state / 'monitor-state.json'
+    if monitor_path.exists():
+        result['background'] = json.loads(monitor_path.read_text())
+    return result
 
 
 def _ids(arguments):
@@ -102,6 +108,15 @@ def preview(manager, arguments):
 
 def _perform(manager, command, arguments):
     revision = manager.document['revision']
+    if command == 'automation':
+        enabled = arguments.get('enabled')
+        if type(enabled) is not bool:
+            raise APIError('invalid_arguments', 'Choose whether automation is enabled.')
+        if enabled and (not manager.entries or manager.legacy_conflicts()):
+            raise StateError('Migrate a folder before enabling automation, and finish any legacy transition.')
+        manager.document['automation_enabled'] = enabled
+        manager.save()
+        return {'enabled': enabled}
     if command == 'choose_device':
         path = arguments.get('path')
         if not isinstance(path, str):
@@ -160,12 +175,20 @@ def _perform(manager, command, arguments):
 def dispatch(request, *, home=None, emit=None):
     command = request.get('command')
     arguments = request.get('arguments', {})
-    if not isinstance(command, str) or command not in READ_COMMANDS + MUTATIONS:
+    if not isinstance(command, str) or command not in READ_COMMANDS + MUTATIONS + BACKGROUND_COMMANDS:
         raise APIError('unsupported_command', 'Unknown command.')
     if not isinstance(arguments, dict):
         raise APIError('invalid_arguments', 'Arguments must be an object.')
     manager = AppManager(home)
     manager.on_progress = emit
+    if command == 'monitor':
+        if not manager.document.get('automation_enabled'):
+            return {'state': 'disabled'}
+        try:
+            with manager.locked():
+                return manager.monitor()
+        except StateBusyError:
+            return {'state': 'busy'}
     if command == 'status':
         return status(manager)
     if command == 'discover':

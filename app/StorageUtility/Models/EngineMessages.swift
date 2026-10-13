@@ -56,6 +56,19 @@ struct StorageSnapshot: Decodable {
     let operations: [StorageOperation]
     let internalFreeBytes: Int64
     let legacyConflict: Bool
+    let automationEnabled: Bool?
+    let background: BackgroundSnapshot?
+}
+
+struct BackgroundSnapshot: Decodable {
+    let checkedAt: Double
+    let result: BackgroundResult
+}
+struct BackgroundResult: Decodable {
+    let state: String
+    let errors: [String]?
+    let lowSpace: Bool?
+    let overBudget: Bool?
 }
 
 struct CatalogResponse: Decodable { let revision: Int; let entries: [CatalogEntry] }

@@ -161,9 +161,12 @@ class Manager:
         atomic_json(self.config_path, self.config)
         atomic_json(self.registry_path, {'version': 1, 'entries': self.entries})
 
+    @property
+    def fallback_root(self): return self.home / '.ssd-migration-fallback'
+
     def fallback(self, source):
         rel = Path(source).absolute().relative_to(self.home)
-        return self.home / '.ssd-migration-fallback' / 'Users' / self.home.name / rel
+        return self.fallback_root / 'Users' / self.home.name / rel
 
     def validate_entry(self, e):
         src, dst = Path(e['source']), Path(e['destination'])
@@ -303,7 +306,7 @@ class Manager:
             for source in sources:
                 overwrite = None
                 if source == local and e['kind'] == 'cache':
-                    cache_roots = [local / sub for sub in e.get('prune_subdirs', ['.'])]
+                    cache_roots = [local / sub for sub in (e.get('prune_subdirs') or ['.'])]
                     overwrite = lambda path: any(inside(path, root) for root in cache_roots)
                 copy_merge(source, stage, overwrite)
                 verify_copy(source, stage)
@@ -327,7 +330,7 @@ class Manager:
             if source_backup:
                 verify_copy(source_backup, dst)
                 shutil.rmtree(source_backup)
-            elif local.exists() and inside(local, self.home / '.ssd-migration-fallback'):
+            elif local.exists() and inside(local, self.fallback_root):
                 verify_copy(local, dst)
                 clear_contents(local)
             if published_backup: shutil.rmtree(published_backup)
@@ -351,7 +354,7 @@ class Manager:
                 if self.is_busy(e, busy):
                     results.append({'source': str(src), 'state': 'active-writer'}); continue
                 fallback = self.fallback(src)
-                fallback_root = self.home / '.ssd-migration-fallback'
+                fallback_root = self.fallback_root
                 if fallback_root.is_symlink(): raise StorageError('Fallback root must not be a symlink')
                 fallback_root.mkdir(mode=0o700, parents=True, exist_ok=True)
                 fallback_root.chmod(0o700)
@@ -387,7 +390,7 @@ class Manager:
         if src != self.home / '.gradle' or e['kind'] != 'cache':
             raise StorageError('Gradle reconnect requires the registered Gradle cache')
         base = self.fallback(src)
-        fallback_root = self.home / '.ssd-migration-fallback'
+        fallback_root = self.fallback_root
         if fallback_root.is_symlink() or base.is_symlink() or not inside(base.resolve(), fallback_root.resolve()):
             raise StorageError('Unsafe Gradle fallback')
         roots = [base / rel for rel in GRADLE_DISPOSABLE]
@@ -479,9 +482,9 @@ class Manager:
             self.validate_entry(e)
             if e['kind'] != 'cache': continue
             base = self.fallback(e['source'])
-            if base.is_symlink() or not inside(base.resolve(), (self.home / '.ssd-migration-fallback').resolve()):
+            if base.is_symlink() or not inside(base.resolve(), (self.fallback_root).resolve()):
                 raise StorageError('Fallback directory escapes managed storage: ' + str(base))
-            roots = [base / sub for sub in e.get('prune_subdirs', ['.'])]
+            roots = [base / sub for sub in (e.get('prune_subdirs') or ['.'])]
             for root in roots:
                 if not inside(root.resolve(), base.resolve()) or root.is_symlink(): continue
                 if root.is_dir(): candidates.append((root.stat().st_mtime, root, e, allocated(root)))

@@ -7,6 +7,7 @@ import re
 import shlex
 import shutil
 import subprocess
+import time
 import uuid
 
 from .catalog import entries as catalog_entries, custom_entry, discover
@@ -70,6 +71,89 @@ class AppManager(Manager):
 
     def fallback(self, source):
         return self.store.fallback / Path(source).absolute().relative_to(self.home)
+
+    @property
+    def fallback_root(self):
+        return self.store.fallback
+
+    def switch_entries(self, entries, online, busy):
+        # An unexpected link must never be silently adopted or overwritten.
+        safe, results = [], []
+        for entry in entries:
+            source = Path(entry['source'])
+            if source.is_symlink() and os.readlink(source) not in (entry['destination'], str(self.fallback(source))):
+                results.append({'source': str(source), 'state': 'blocked', 'reason': 'Unexpected link; inspect before routing.'})
+            else:
+                safe.append(entry)
+        results.extend(super().switch_entries(safe, online, busy))
+        for result in results:
+            if result['state'] == 'requires-T9':
+                result['state'] = 'requires-disk'
+        return results
+
+    def monitor(self):
+        if not self.document.get('automation_enabled'):
+            return {'state': 'disabled'}
+        if not self._has_lock:
+            raise StateError('Monitoring requires the Costola lock.')
+        prior_path = self.state / 'monitor-state.json'
+        prior = json.loads(prior_path.read_text()) if prior_path.exists() else {}
+        now = time.time()
+        if any(op['phase'] not in ('completed', 'failed') for op in self.document['operations'].values()):
+            result = {'state': 'recovery-required', 'message': 'Open Costola to recover an interrupted operation.'}
+            atomic_write(prior_path, {'checked_at': now, 'result': result})
+            return result
+        errors = []
+        physical = self.physical_online()
+        if self.config.get('manual_detached'):
+            if not physical and not self.config.get('saw_disconnect'):
+                self.config['saw_disconnect'] = True
+                self.save()
+            elif physical and self.config.get('saw_disconnect'):
+                self.config.pop('manual_detached', None)
+                self.config.pop('saw_disconnect', None)
+                self.save()
+        if physical and not self.online() and not self.config.get('manual_detached'):
+            try:
+                self.attach()
+            except (StorageError, StateError, DeviceError, OSError) as error:
+                errors.append(str(error))
+        online, busy = self.online(), self.processes()
+        retries = prior.get('retries', {})
+        if online:
+            specs = {entry['id']: entry for entry in self.specs()}
+            for identity in self.document['pending']:
+                if identity not in self.document['selected'] or retries.get(identity, 0) > now:
+                    continue
+                entry = specs[identity]
+                if self.is_busy(entry, busy):
+                    continue
+                try:
+                    self.migrate(entry, busy)
+                    self.configure()
+                    retries.pop(identity, None)
+                except Exception as error:
+                    errors.append(str(error))
+                    retries[identity] = now + 3600
+                break
+        # A failed transfer can leave recoverable copies. Do not prune or reroute them.
+        interrupted = any(op['phase'] not in ('completed', 'failed') for op in self.document['operations'].values())
+        paths = [] if interrupted else self.switch_entries(self.entries, online, busy)
+        interrupted = any(op['phase'] not in ('completed', 'failed') for op in self.document['operations'].values())
+        free = shutil.disk_usage(self.home).free
+        cleanup = prior.get('cleanup', {})
+        last_sweep = prior.get('last_sweep', 0)
+        if not interrupted and (now - last_sweep >= 900 or free < self.config['emergency_free_bytes']):
+            budget = 0 if free < self.config['emergency_free_bytes'] else self.config['cache_budget_bytes']
+            cleanup = self.prune(self.entries, budget, self.processes())
+            last_sweep = now
+        result = {'state': 'recovery-required' if interrupted else 'checked', 'online': online,
+                  'errors': errors, 'paths': paths, 'low_space': free < self.config['warning_free_bytes'],
+                  'over_budget': cleanup.get('over_budget', False)}
+        changed = result != prior.get('result')
+        atomic_write(prior_path, {'checked_at': now, 'result': result, 'last_sweep': last_sweep,
+                                 'cleanup': cleanup, 'retries': retries})
+        return {**result, 'notify': changed and (bool(errors) or interrupted or result['low_space'] or result['over_budget'])}
 
     def specs(self):
         result = catalog_entries(self.home) + self.document['custom']

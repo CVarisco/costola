@@ -1,8 +1,33 @@
 [
-  {"protocol_version": 1, "request_id": "fixture", "type": "progress", "phase": "copying", "entry_id": "npm", "operation_id": "operation"},
-  {"protocol_version": 1, "request_id": "fixture", "type": "result", "success": true, "data": {
-    "revision": 0, "device": null, "online": false, "selected": [], "pending": [], "paths": [],
-    "settings": {"cache_budget_bytes": 5368709120, "warning_free_percent": 10, "urgent_free_percent": 5},
-    "operations": [], "internal_free_bytes": 0, "legacy_conflict": false
-  }}
+  {
+    "protocol_version": 1,
+    "request_id": "fixture",
+    "type": "progress",
+    "phase": "copying",
+    "entry_id": "npm",
+    "operation_id": "operation"
+  },
+  {
+    "protocol_version": 1,
+    "request_id": "fixture",
+    "type": "result",
+    "success": true,
+    "data": {
+      "revision": 0,
+      "device": null,
+      "online": false,
+      "selected": [],
+      "pending": [],
+      "paths": [],
+      "settings": {
+        "cache_budget_bytes": 5368709120,
+        "warning_free_percent": 10,
+        "urgent_free_percent": 5
+      },
+      "operations": [],
+      "internal_free_bytes": 0,
+      "legacy_conflict": false,
+      "automation_enabled": false
+    }
+  }
 ]

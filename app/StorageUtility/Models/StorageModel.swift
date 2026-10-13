@@ -27,6 +27,7 @@ final class StorageModel: ObservableObject {
     @Published var phase = ""
     @Published var error: String?
     @Published var results: [PathResult] = []
+    @Published var serviceStatus = BackgroundService.description
     private let client: any EngineServing
     private var refreshGeneration = 0
     private var activeMutation: UUID?
@@ -36,6 +37,7 @@ final class StorageModel: ObservableObject {
     var newSelectionCount: Int { selection.subtracting(Set(snapshot?.paths.map(\.id) ?? [])).count }
 
     func refresh(includeCatalog: Bool = true) async {
+        serviceStatus = BackgroundService.description
         refreshGeneration += 1
         let generation = refreshGeneration
         isLoading = true
@@ -97,6 +99,23 @@ final class StorageModel: ObservableObject {
     func restore() async {
         guard let snapshot else { return }
         await mutate("restore", arguments: ["revision": snapshot.revision], description: "Preparing restore…")
+    }
+
+    func setAutomation(_ enabled: Bool) async {
+        guard let snapshot, !isBusy else { return }
+        await mutate("automation", arguments: ["enabled": enabled, "revision": snapshot.revision], description: "Updating automation…")
+        guard error == nil else { return }
+        do {
+            if enabled { try BackgroundService.enable() }
+            else { try await BackgroundService.disable() }
+        } catch { self.error = "Automation service: " + error.localizedDescription }
+        serviceStatus = BackgroundService.description
+    }
+
+    func enableNotifications() async {
+        do {
+            if try await !Notifications.authorize() { error = "Notifications are disabled in System Settings." }
+        } catch { self.error = error.localizedDescription }
     }
 
     func recover(_ operation: StorageOperation) async {
