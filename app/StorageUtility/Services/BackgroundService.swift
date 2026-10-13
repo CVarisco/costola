@@ -9,7 +9,9 @@ enum BackgroundService {
         case .enabled: return "Allowed by macOS"
         case .requiresApproval: return "Approval needed in System Settings → Login Items"
         case .notRegistered: return "Not registered"
-        case .notFound: return "Background helper missing — reinstall Costola"
+        // macOS can report notFound before the first successful registration,
+        // even when the bundled helper is present and can be launched.
+        case .notFound: return "Not registered or unavailable"
         @unknown default: return "Unknown service status"
         }
     }
