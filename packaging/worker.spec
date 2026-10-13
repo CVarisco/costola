@@ -1,7 +1,7 @@
 from pathlib import Path
 
 root = Path(SPECPATH).parent
-analysis = Analysis([str(root / 'core' / 'worker_entry.py')], pathex=[str(root / 'core')])
+analysis = Analysis([str(root / 'core' / 'worker_entry.py')], pathex=[str(root)])
 archive = PYZ(analysis.pure)
 executable = EXE(
     archive, analysis.scripts, [], exclude_binaries=True,

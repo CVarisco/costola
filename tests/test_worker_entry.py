@@ -42,7 +42,8 @@ class WorkerEntryTests(unittest.TestCase):
         self.assertEqual(event['type'], 'result')
         self.assertTrue(event['success'])
         self.assertEqual(event['data']['product'], 'Costola')
-        self.assertEqual(event['data']['capabilities'], ['info'])
+        self.assertIn('info', event['data']['capabilities'])
+        self.assertIn('preview', event['data']['capabilities'])
         self.assertFalse(event['data']['frozen'])
 
     def test_incompatible_protocol_is_a_failed_result(self):
@@ -54,9 +55,9 @@ class WorkerEntryTests(unittest.TestCase):
         self.assertFalse(event['success'])
         self.assertEqual(event['error']['code'], 'unsupported_protocol')
 
-    def test_probe_does_not_accept_storage_commands(self):
+    def test_unknown_command_is_rejected(self):
         result = self.invoke(json.dumps({
-            'protocol_version': 1, 'request_id': 'write-1', 'command': 'migrate',
+            'protocol_version': 1, 'request_id': 'write-1', 'command': 'unknown-command',
         }))
         self.assertNotEqual(result.returncode, 0)
         self.assertEqual(json.loads(result.stdout)['error']['code'], 'unsupported_command')

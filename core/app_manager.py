@@ -11,7 +11,7 @@ import uuid
 
 from .catalog import entries as catalog_entries, custom_entry, discover
 from .device import disk_info, resolve_volume, validate_volume, DeviceError
-from .state import StateStore, StateError, atomic_write
+from .state import StateStore, StateError, atomic_write, apply_selection
 from .storage_manager import Manager, StorageError, GIB, lexists
 from .preflight import inspect_tree
 from .macos_copy import copy_tree, verify_manifest, sync_tree
@@ -23,6 +23,7 @@ class AppManager(Manager):
         self.store = StateStore(self.home)
         self.state = self.store.root
         self._has_lock = False
+        self.on_progress = None
         self._load()
 
     def _load(self):
@@ -103,18 +104,29 @@ class AppManager(Manager):
             if old and old['uuid'] == device['uuid']:
                 document['device'].update(device)
                 return
-            if document['entries'] or document['operations']:
+            if document['entries'] or any(op['phase'] not in ('completed', 'failed') for op in document['operations'].values()):
                 raise StateError('Restore managed folders before changing the disk.')
             device['image_name'] = 'Costola-' + uuid.uuid4().hex + '.sparsebundle'
             document['device'] = device
-        self.store.change(revision, update)
+            document['runtime'] = {}
+            for key in ('data_uuid', 'manual_detached', 'saw_disconnect'):
+                self.config.pop(key, None)
+        self._change(revision, update)
+
+    def _change(self, revision, update):
+        if self._has_lock:
+            if self.document['revision'] != revision:
+                raise StateError('Selection changed; refresh the preview.')
+            update(self.document)
+            self.save()
+        else:
+            self.store.change(revision, update)
         self._load()
 
     def add_custom(self, source, revision):
         existing = [entry for entry in self.specs() if entry['id'] in self.document['selected']]
         entry = custom_entry(self.home, source, existing + self.document['custom'])
-        self.store.change(revision, lambda document: document['custom'].append(entry))
-        self._load()
+        self._change(revision, lambda document: document['custom'].append(entry))
         return entry
 
     def select(self, ids, revision):
@@ -128,8 +140,7 @@ class AppManager(Manager):
                 if any(path.is_relative_to(other) or other.is_relative_to(path) for other in selected_paths):
                     raise StateError('Selected folders overlap.')
                 selected_paths.append(path)
-        self.store.select(ids, known_ids=known, revision=revision)
-        self._load()
+        self._change(revision, lambda document: apply_selection(document, ids, known))
 
     def physical_online(self):
         identity = self.config.get('physical_uuid')
@@ -179,6 +190,8 @@ class AppManager(Manager):
     def _phase(self, operation, phase):
         operation['phase'] = phase
         self.save()
+        if self.on_progress:
+            self.on_progress({'operation_id': operation['id'], 'entry_id': operation['entry']['id'], 'phase': phase})
 
     @staticmethod
     def _sync_parent(path):

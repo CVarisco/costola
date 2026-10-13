@@ -12,6 +12,19 @@ class StateError(Exception):
     pass
 
 
+def apply_selection(value, ids, known_ids):
+    if not isinstance(ids, list) or any(not isinstance(item, str) for item in ids):
+        raise StateError('Selection must contain catalog IDs.')
+    if len(set(ids)) != len(ids) or not set(ids) <= set(known_ids):
+        raise StateError('Selection contains unknown or duplicate folders.')
+    if set(value['entries']) - set(ids):
+        raise StateError('Restore migrated folders before removing them from Costola.')
+    if any(op.get('phase') not in ('completed', 'failed') for op in value['operations'].values()):
+        raise StateError('Finish or recover the active operation before changing selection.')
+    value['selected'] = list(ids)
+    value['pending'] = [item for item in ids if item not in value['entries']]
+
+
 def atomic_write(path, value):
     fd, temporary = tempfile.mkstemp(dir=path.parent, prefix='.' + path.name)
     try:
@@ -91,16 +104,4 @@ class StateStore:
             return result
 
     def select(self, ids, *, known_ids, revision):
-        if not isinstance(ids, list) or any(not isinstance(item, str) for item in ids):
-            raise StateError('Selection must contain catalog IDs.')
-        if len(set(ids)) != len(ids) or not set(ids) <= set(known_ids):
-            raise StateError('Selection contains unknown or duplicate folders.')
-
-        def update(value):
-            if set(value['entries']) - set(ids):
-                raise StateError('Restore migrated folders before removing them from Costola.')
-            if any(op.get('phase') not in ('completed', 'failed') for op in value['operations'].values()):
-                raise StateError('Finish or recover the active operation before changing selection.')
-            value['selected'] = list(ids)
-            value['pending'] = [item for item in ids if item not in value['entries']]
-        return self.change(revision, update)
+        return self.change(revision, lambda value: apply_selection(value, ids, known_ids))

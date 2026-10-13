@@ -50,6 +50,16 @@ enum BundleWorker {
     }
 
     static func probe(appURL: URL) throws -> (WorkerResult, Data) {
+        let requestID = UUID().uuidString
+        let input = try JSONSerialization.data(withJSONObject: [
+            "protocol_version": 1, "request_id": requestID, "command": "info",
+        ])
+        let bytes = try exchange(appURL: appURL, input: input, requestID: requestID)
+        return (try decode(bytes, requestID: requestID), bytes)
+    }
+
+    static func exchange(appURL: URL, input: Data, requestID: String,
+                         onProgress: ((WorkerProgress) -> Void)? = nil) throws -> Data {
         let workerBundle = appURL.appendingPathComponent("Contents/Helpers/CostolaWorker.app")
         let worker = workerBundle.appendingPathComponent("Contents/MacOS/CostolaWorker")
         guard FileManager.default.isExecutableFile(atPath: worker.path) else {
@@ -58,10 +68,6 @@ enum BundleWorker {
         // Validate the code we are about to launch, including its sealed resources.
         // The launcher is an auxiliary executable, not the enclosing app's main code.
         try verifySignature(workerBundle)
-        let requestID = UUID().uuidString
-        let input = try JSONSerialization.data(withJSONObject: [
-            "protocol_version": 1, "request_id": requestID, "command": "info",
-        ])
         let process = Process()
         let stdin = Pipe(), stdout = Pipe(), stderr = Pipe()
         process.executableURL = worker
@@ -71,17 +77,23 @@ enum BundleWorker {
         // The probe has no state or storage access. Do not inherit Python injection variables.
         process.environment = ["PATH": "/usr/bin:/bin", "LANG": "en_US.UTF-8"]
         try process.run()
+        defer { if process.isRunning { process.terminate() } }
         try stdin.fileHandleForWriting.write(contentsOf: input)
         try stdin.fileHandleForWriting.close()
         // Drain both pipes concurrently; a launch diagnostic must not deadlock stdout.
         let errors = OutputReader(stderr.fileHandleForReading)
-        let bytes = stdout.fileHandleForReading.readDataToEndOfFile()
+        var stream = WorkerStream(requestID: requestID)
+        while true {
+            let chunk = stdout.fileHandleForReading.availableData
+            if chunk.isEmpty { break }
+            for progress in try stream.consume(chunk) { onProgress?(progress) }
+        }
         process.waitUntilExit()
         let diagnostic = errors.finish()
-        guard process.terminationStatus == 0 else {
+        if stream.result == nil && !diagnostic.isEmpty {
             throw WorkerError.failed(String(decoding: diagnostic.prefix(4096), as: UTF8.self))
         }
-        return (try decode(bytes, requestID: requestID), bytes)
+        return try stream.finish(exitCode: process.terminationStatus)
     }
 
     private static func verifySignature(_ url: URL) throws {
@@ -104,7 +116,11 @@ private final class OutputReader: @unchecked Sendable {
     init(_ handle: FileHandle) {
         group.enter()
         DispatchQueue.global().async { [self] in
-            data = handle.readDataToEndOfFile()
+            while true {
+                let chunk = handle.availableData
+                if chunk.isEmpty { break }
+                if data.count < 4096 { data.append(chunk.prefix(4096 - data.count)) }
+            }
             group.leave()
         }
     }

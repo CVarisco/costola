@@ -37,7 +37,11 @@ targets:
   StorageUtilityTests:
     type: bundle.unit-test
     platform: macOS
-    sources: [StorageUtilityTests]
+    sources:
+      - StorageUtilityTests
+      - path: ../tests/fixtures/protocol
+        type: folder
+        buildPhase: resources
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.cvarisco.costola.dev.tests

@@ -10,6 +10,7 @@ let appURL = executableURL
 do {
     let (_, bytes) = try BundleWorker.probe(appURL: appURL)
     FileHandle.standardOutput.write(bytes)
+    FileHandle.standardOutput.write(Data([10]))
 } catch {
     FileHandle.standardError.write(Data((error.localizedDescription + "\n").utf8))
     exit(1)

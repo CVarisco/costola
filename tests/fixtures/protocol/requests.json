@@ -1,0 +1,3 @@
+[
+  {"protocol_version": 1, "request_id": "fixture", "command": "status", "arguments": {}}
+]

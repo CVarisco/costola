@@ -45,6 +45,17 @@ class PackagedWorkerTests(unittest.TestCase):
             self.assertEqual(result.stdout, '')
             self.assertIn('worker', result.stderr.lower())
 
+    def test_frozen_worker_exposes_read_only_status_without_initializing_home(self):
+        with tempfile.TemporaryDirectory(prefix='Costola isolated home ') as directory:
+            worker = self.app / 'Contents/Helpers/CostolaWorker.app/Contents/MacOS/CostolaWorker'
+            result = subprocess.run(
+                [str(worker)], input=json.dumps({'protocol_version': 1, 'request_id': 'status', 'command': 'status'}),
+                env={'HOME': directory, 'PATH': ''}, cwd=directory, capture_output=True, text=True, timeout=30,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(json.loads(result.stdout)['data']['selected'], [])
+            self.assertEqual(list(Path(directory).iterdir()), [])
+
     def test_modified_worker_resources_fail_signature_validation(self):
         with tempfile.TemporaryDirectory(prefix='Costola invalid signature ') as directory:
             app = Path(directory) / 'Costola.app'
