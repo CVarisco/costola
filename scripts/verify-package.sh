@@ -23,6 +23,12 @@ agent_path = app / ('Contents/Library/LaunchAgents/' + info['CFBundleIdentifier'
 agent = plistlib.loads(agent_path.read_bytes())
 assert agent['Label'] == info['CFBundleIdentifier'] + '.agent'
 assert agent['BundleProgram'] == 'Contents/MacOS/CostolaAgent'
+agent_signature = subprocess.run(
+    ['codesign', '-d', '--verbose=4', str(app / agent['BundleProgram'])],
+    capture_output=True, text=True, check=True,
+)
+assert 'Identifier=' + info['CFBundleIdentifier'] in agent_signature.stderr.splitlines(), \
+    'The agent must share the app signing identifier to use its notification permission.'
 assert (app / 'Contents/Resources/Licenses/Costola.txt').is_file()
 if mode == '--release':
     assert info['CFBundleIdentifier'] == release['bundle_id']

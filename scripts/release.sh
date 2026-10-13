@@ -19,11 +19,14 @@ mkdir -p "$OUT"
 # Sign actual Mach-O files first, then enclosing code bundles, then the app.
 python3 - "$APP" "$COSTOLA_SIGN_IDENTITY" <<'PY'
 from pathlib import Path
+import plistlib
 import subprocess
 import sys
 app, identity = Path(sys.argv[1]), sys.argv[2]
+bundle_id = plistlib.loads((app / 'Contents/Info.plist').read_bytes())['CFBundleIdentifier']
 def sign(path):
-    subprocess.run(['codesign', '--force', '--sign', identity, '--options', 'runtime', '--timestamp', str(path)], check=True)
+    options = ['--identifier', bundle_id] if path == app / 'Contents/MacOS/CostolaAgent' else []
+    subprocess.run(['codesign', '--force', '--sign', identity, '--options', 'runtime', '--timestamp', *options, str(path)], check=True)
 for path in app.rglob('*'):
     if path.is_file() and not path.is_symlink():
         with path.open('rb') as stream:

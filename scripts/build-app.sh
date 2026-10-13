@@ -24,6 +24,8 @@ cp "$ROOT/app/StorageAgent/LaunchAgent.plist" "$PLIST"
 mkdir -p "$APP/Contents/Resources/Licenses"
 cp "$ROOT/LICENSE" "$APP/Contents/Resources/Licenses/Costola.txt"
 ditto "$ROOT/packaging/licenses" "$APP/Contents/Resources/Licenses"
+# UserNotifications checks the helper's signing identity against the app's grant.
+codesign --force --sign - --options runtime --identifier "$COSTOLA_BUNDLE_ID" "$APP/Contents/MacOS/CostolaAgent"
 codesign --force --sign - --options runtime "$APP"
 codesign --verify --deep --strict "$APP"
 "$APP/Contents/MacOS/CostolaAgent" --probe
