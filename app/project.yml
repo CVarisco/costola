@@ -1,0 +1,54 @@
+name: StorageUtility
+options:
+  minimumXcodeGenVersion: 2.46.0
+  deploymentTarget:
+    macOS: '13.0'
+configFiles:
+  Debug: ../packaging/build-settings.xcconfig
+  Release: ../packaging/build-settings.xcconfig
+targets:
+  Costola:
+    type: application
+    platform: macOS
+    sources: [StorageUtility, Shared]
+    info:
+      path: StorageUtility/Info.plist
+      properties:
+        CFBundleDisplayName: Costola
+        NSHighResolutionCapable: true
+        NSRemovableVolumesUsageDescription: Costola uses your selected external drive to store the folders you authorize.
+        LSApplicationCategoryType: public.app-category.developer-tools
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.cvarisco.costola.dev
+        ENABLE_HARDENED_RUNTIME: YES
+        CODE_SIGN_ENTITLEMENTS: StorageUtility/StorageUtility.entitlements
+    dependencies:
+      - target: CostolaAgent
+        embed: false
+  CostolaAgent:
+    type: tool
+    platform: macOS
+    sources: [StorageAgent/main.swift, Shared]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.cvarisco.costola.dev.agent
+        ENABLE_HARDENED_RUNTIME: YES
+  StorageUtilityTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources: [StorageUtilityTests]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.cvarisco.costola.dev.tests
+        GENERATE_INFOPLIST_FILE: YES
+    dependencies:
+      - target: Costola
+schemes:
+  StorageUtility:
+    build:
+      targets:
+        Costola: all
+        CostolaAgent: all
+    test:
+      targets: [StorageUtilityTests]

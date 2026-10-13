@@ -1,0 +1,8 @@
+MACOSX_DEPLOYMENT_TARGET = 13.0
+SWIFT_VERSION = 5.0
+MARKETING_VERSION = 0.1.0
+CURRENT_PROJECT_VERSION = 1
+// Development identity only. Public releases require Developer ID signing.
+CODE_SIGN_IDENTITY = -
+CODE_SIGN_STYLE = Manual
+ENABLE_DEBUG_DYLIB = NO

@@ -1,0 +1,13 @@
+.DS_Store
+__pycache__/
+*.py[cod]
+.venv/
+.build/
+build/
+dist/
+*.xcuserstate
+xcuserdata/
+.ssd-migration/
+*.p12
+*.p8
+*.mobileprovision
