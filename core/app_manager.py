@@ -13,7 +13,7 @@ import uuid
 from .catalog import entries as catalog_entries, custom_entry, discover
 from .device import disk_info, resolve_volume, validate_volume, DeviceError
 from .state import StateStore, StateError, atomic_write, apply_selection
-from .storage_manager import Manager, StorageError, GIB, lexists
+from .storage_manager import Manager, StorageError, GIB, lexists, run
 from .preflight import inspect_tree
 from .macos_copy import copy_tree, verify_manifest, sync_tree
 
@@ -91,6 +91,10 @@ class AppManager(Manager):
                 result['state'] = 'requires-disk'
         return results
 
+    @property
+    def has_incomplete_operations(self):
+        return any(op['phase'] not in ('completed', 'failed') for op in self.document['operations'].values())
+
     def monitor(self):
         if not self.document.get('automation_enabled'):
             return {'state': 'disabled'}
@@ -99,7 +103,7 @@ class AppManager(Manager):
         prior_path = self.state / 'monitor-state.json'
         prior = json.loads(prior_path.read_text()) if prior_path.exists() else {}
         now = time.time()
-        if any(op['phase'] not in ('completed', 'failed') for op in self.document['operations'].values()):
+        if self.has_incomplete_operations:
             result = {'state': 'recovery-required', 'message': 'Open Costola to recover an interrupted operation.'}
             atomic_write(prior_path, {'checked_at': now, 'result': result})
             return result
@@ -137,9 +141,9 @@ class AppManager(Manager):
                     retries[identity] = now + 3600
                 break
         # A failed transfer can leave recoverable copies. Do not prune or reroute them.
-        interrupted = any(op['phase'] not in ('completed', 'failed') for op in self.document['operations'].values())
+        interrupted = self.has_incomplete_operations
         paths = [] if interrupted else self.switch_entries(self.entries, online, busy)
-        interrupted = any(op['phase'] not in ('completed', 'failed') for op in self.document['operations'].values())
+        interrupted = self.has_incomplete_operations
         free = shutil.disk_usage(self.home).free
         cleanup = prior.get('cleanup', {})
         last_sweep = prior.get('last_sweep', 0)
@@ -387,51 +391,60 @@ class AppManager(Manager):
     def restore(self, dry_run=False):
         results = []
         for entry in list(self.entries):
-            self.validate_entry(entry)
-            source = Path(entry['source'])
-            if not source.is_symlink():
-                raise StorageError('The managed source is no longer its expected link.')
-            target = Path(os.readlink(source))
-            if target not in (Path(entry['destination']), self.fallback(source)):
-                raise StorageError('Unexpected restore link.')
-            if target == Path(entry['destination']) and not self.online():
-                raise StorageError('The external copy is unavailable.')
-            self.check_writers(entry, target)
-            self.check_space([target], restore=True)
-            if dry_run:
-                results.append({'id': entry['id'], 'state': 'would-restore'})
-                continue
-            operation = self._new_operation(entry, 'restore', target, source)
-            stage, backup = Path(operation['stage']), Path(operation['backup'])
-            operation['original_link'] = str(target)
             try:
-                self._phase(operation, 'copying')
-                if lexists(stage) or lexists(backup):
-                    raise StorageError('Restore staging already exists.')
-                expected = copy_tree(target, stage)
-                sync_tree(stage)
-                self._record_manifest(operation, expected)
-                self._phase(operation, 'verified')
-                self.check_writers(entry, target)
-                verify_manifest(expected, target)
-                if target == Path(entry['destination']) and not self.online():
-                    raise StorageError('Disk disconnected; restore copy retained.')
-                self._phase(operation, 'publishing')
-                source.rename(backup)
-                stage.rename(source)
-                self._sync_parent(source)
-                self._phase(operation, 'published')
-                verify_manifest(expected, source)
-                self._finish_restore(entry, backup)
-                self._phase(operation, 'completed')
-                results.append({'id': entry['id'], 'state': 'restored-external-copy-retained'})
+                results.append(self._restore_entry(entry, dry_run))
             except Exception as error:
-                operation['error'] = str(error)
-                self._phase(operation, 'recovery-required')
-                raise
+                results.append({'id': entry['id'], 'state': 'blocked', 'error': str(error)})
+        if not dry_run and not self.entries:
+            self.document['automation_enabled'] = False
+            self.save()
         return results
 
+    def _restore_entry(self, entry, dry_run=False):
+        self.validate_entry(entry)
+        source = Path(entry['source'])
+        if not source.is_symlink():
+            raise StorageError('The managed source is no longer its expected link.')
+        target = Path(os.readlink(source))
+        if target not in (Path(entry['destination']), self.fallback(source)):
+            raise StorageError('Unexpected restore link.')
+        if target == Path(entry['destination']) and not self.online():
+            raise StorageError('The external copy is unavailable.')
+        self.check_writers(entry, target)
+        self.check_space([target], restore=True)
+        if dry_run:
+            return {'id': entry['id'], 'state': 'would-restore'}
+        operation = self._new_operation(entry, 'restore', target, source)
+        stage, backup = Path(operation['stage']), Path(operation['backup'])
+        operation['original_link'] = str(target)
+        try:
+            self._phase(operation, 'copying')
+            if lexists(stage) or lexists(backup):
+                raise StorageError('Restore staging already exists.')
+            expected = copy_tree(target, stage)
+            sync_tree(stage)
+            self._record_manifest(operation, expected)
+            self._phase(operation, 'verified')
+            self.check_writers(entry, target)
+            verify_manifest(expected, target)
+            if target == Path(entry['destination']) and not self.online():
+                raise StorageError('Disk disconnected; restore copy retained.')
+            self._phase(operation, 'publishing')
+            source.rename(backup)
+            stage.rename(source)
+            self._sync_parent(source)
+            self._phase(operation, 'published')
+            verify_manifest(expected, source)
+            self._finish_restore(entry, backup)
+            self._phase(operation, 'completed')
+            return {'id': entry['id'], 'state': 'restored-external-copy-retained'}
+        except Exception as error:
+            operation['error'] = str(error)
+            self._phase(operation, 'recovery-required')
+            raise
+
     def _finish_restore(self, entry, backup):
+        self.restore_configuration(entry['id'])
         if backup.is_symlink():
             backup.unlink()
         self.entries = [item for item in self.entries if item['id'] != entry['id']]
@@ -515,7 +528,7 @@ class AppManager(Manager):
             originals = [line for line in lines if re.search(pattern, line)]
             after = '\n'.join([line for line in lines if not re.search(pattern, line)] + [replacement]) + '\n'
             receipt = {'file': relative, 'original_lines': originals, 'introduced_line': replacement,
-                       'existed': path.exists(), 'phase': 'prepared'}
+                       'existed': path.exists(), 'pattern': pattern, 'phase': 'prepared'}
             self.document['configuration_changes'][identity] = receipt
             self.save()  # Preserve the inverse before modifying the user's configuration.
             backup = self.state / 'backups/configuration'
@@ -532,3 +545,60 @@ class AppManager(Manager):
                     temporary.unlink()
             receipt['phase'] = 'installed'
             self.save()
+
+    def restore_configuration(self, identity):
+        receipt = self.document['configuration_changes'].get(identity)
+        if not receipt or receipt['phase'] in ('restored', 'user-modified'):
+            return
+        path = self.home / receipt['file']
+        if path.is_symlink():
+            raise StateError('Tool configuration became a symlink; review it before restoring.')
+        before = path.read_text() if path.exists() else ''
+        lines = before.splitlines()
+        introduced = receipt['introduced_line']
+        if introduced not in lines:
+            # A prepared write may never have happened, or the user chose another value.
+            receipt['phase'] = 'user-modified'
+            self.save()
+            return
+        remaining = [line for line in lines if line != introduced]
+        pattern = receipt.get('pattern')
+        if not pattern or not any(re.search(pattern, line) for line in remaining):
+            remaining += receipt['original_lines']
+        after = '\n'.join(remaining) + ('\n' if remaining else '')
+        temporary = path.with_name('.' + path.name + '.costola-' + uuid.uuid4().hex)
+        try:
+            with temporary.open('w') as stream:
+                stream.write(after)
+                stream.flush()
+                os.fsync(stream.fileno())
+            temporary.chmod(path.stat().st_mode & 0o777 if path.exists() else 0o600)
+            if path.read_text() != before:
+                raise StateError('Tool configuration changed during restore; retry after closing its writer.')
+            os.replace(temporary, path)
+            self._sync_parent(path)
+        finally:
+            if temporary.exists():
+                temporary.unlink()
+        receipt['phase'] = 'restored'
+        self.save()
+
+    def disconnect(self):
+        if self.has_incomplete_operations:
+            raise StateError('Recover interrupted operations before disconnecting.')
+        if not self.online():
+            raise StorageError('Managed storage is not mounted.')
+        for entry in self.entries:
+            self.check_writers(entry, Path(entry['source']))
+            self.snapshot_configuration(entry)
+        results = self.switch_entries(self.entries, False, self.processes())
+        if any(result['state'] not in ('local-fallback', 'requires-disk') for result in results):
+            raise StorageError('Could not prepare every folder for disconnection. Close active tools and retry.')
+        # Persist intent before detach so a crash cannot cause an automatic remount.
+        self.config['manual_detached'] = True
+        self.config['saw_disconnect'] = False
+        self.save()
+        if not self.online():
+            raise StorageError('Storage changed before detach; inspect the disk in Finder.')
+        run(['/usr/bin/hdiutil', 'detach', str(self.root)])
+        return {'message': 'Managed storage detached. Eject the physical SSD in Finder before unplugging it.'}

@@ -3,6 +3,7 @@ import SwiftUI
 struct OperationsView: View {
     @EnvironmentObject private var model: StorageModel
     @State private var showingRestore = false
+    @State private var showingDisconnect = false
 
     var body: some View {
         ScrollView {
@@ -16,6 +17,15 @@ struct OperationsView: View {
                     }
                 }
                 if let snapshot = model.snapshot {
+                    if snapshot.device != nil {
+                        HStack {
+                            Button("Connect storage") { Task { await model.connect() } }
+                                .disabled(model.isBusy || snapshot.online)
+                            Button("Prepare to disconnect…") { showingDisconnect = true }
+                                .disabled(model.isBusy || !snapshot.online)
+                        }
+                        Text("After Costola detaches its storage, eject the physical SSD in Finder before unplugging it.").font(.callout).foregroundStyle(.secondary)
+                    }
                     if snapshot.operations.isEmpty { Text("No storage operations yet.").foregroundStyle(.secondary).padding(.vertical) }
                     ForEach(snapshot.operations.reversed()) { operation in
                         HStack(alignment: .top) {
@@ -43,6 +53,12 @@ struct OperationsView: View {
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("Close applications using these folders. Costola checks internal free space, verifies each copy and keeps the external data.")
+        }
+        .confirmationDialog("Prepare storage for disconnection?", isPresented: $showingDisconnect, titleVisibility: .visible) {
+            Button("Prepare to disconnect") { Task { await model.disconnect() } }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Close tools using managed folders. Caches switch to local storage; personal folders and SDKs require the SSD.")
         }
     }
 }

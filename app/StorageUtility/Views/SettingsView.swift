@@ -14,7 +14,7 @@ struct SettingsView: View {
                 HStack {
                     Button(model.snapshot?.automationEnabled == true ? "Disable automation" : "Enable automation") {
                         Task { await model.setAutomation(model.snapshot?.automationEnabled != true) }
-                    }.disabled(model.isBusy || model.snapshot?.paths.isEmpty != false)
+                    }.disabled(model.isBusy || (model.snapshot?.paths.isEmpty != false && model.snapshot?.automationEnabled != true))
                     Button("System Settings…") { BackgroundService.openSettings() }
                 }
                 Button("Allow storage notifications…") { Task { await model.enableNotifications() } }

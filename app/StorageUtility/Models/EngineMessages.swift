@@ -77,6 +77,7 @@ struct MutationResponse: Decodable {
     let revision: Int
     let allSucceeded: Bool?
     let results: [PathResult]?
+    let message: String?
 }
 struct PathResult: Decodable { let id: String; let state: String; let error: String? }
 

@@ -14,6 +14,10 @@ struct CostolaRootView: View {
             }.padding(.top, 24).navigationSplitViewColumnWidth(min: 190, ideal: 210, max: 260)
         } detail: {
             VStack(spacing: 0) {
+                if let notice = model.notice {
+                    Label(notice, systemImage: "info.circle").padding().frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Color.teal.opacity(0.08)).textSelection(.enabled)
+                }
                 if let error = model.error {
                     HStack(alignment: .top) {
                         Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange)

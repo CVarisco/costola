@@ -15,7 +15,7 @@ from .preflight import PreflightError
 
 
 READ_COMMANDS = ('status', 'discover', 'volumes', 'preview')
-MUTATIONS = ('choose_device', 'add_custom', 'select', 'setup', 'migrate', 'restore', 'recover', 'settings', 'automation')
+MUTATIONS = ('choose_device', 'add_custom', 'select', 'setup', 'migrate', 'restore', 'recover', 'settings', 'automation', 'disconnect', 'attach')
 BACKGROUND_COMMANDS = ('monitor',)
 
 
@@ -108,6 +108,11 @@ def preview(manager, arguments):
 
 def _perform(manager, command, arguments):
     revision = manager.document['revision']
+    if command == 'disconnect':
+        return manager.disconnect()
+    if command == 'attach':
+        manager.attach()
+        return {'online': manager.online()}
     if command == 'automation':
         enabled = arguments.get('enabled')
         if type(enabled) is not bool:
@@ -152,7 +157,8 @@ def _perform(manager, command, arguments):
                 results.append({'id': identity, 'state': 'blocked', 'error': str(error)})
         return {'results': results, 'all_succeeded': all(item['state'] == 'external' for item in results)}
     if command == 'restore':
-        return {'results': manager.restore()}
+        results = manager.restore()
+        return {'results': results, 'all_succeeded': all(item['state'] == 'restored-external-copy-retained' for item in results)}
     if command == 'recover':
         identity = arguments.get('operation_id')
         if not isinstance(identity, str) or identity not in manager.document['operations']:

@@ -28,6 +28,7 @@ final class StorageModel: ObservableObject {
     @Published var error: String?
     @Published var results: [PathResult] = []
     @Published var serviceStatus = BackgroundService.description
+    @Published var notice: String?
     private let client: any EngineServing
     private var refreshGeneration = 0
     private var activeMutation: UUID?
@@ -99,6 +100,21 @@ final class StorageModel: ObservableObject {
     func restore() async {
         guard let snapshot else { return }
         await mutate("restore", arguments: ["revision": snapshot.revision], description: "Preparing restore…")
+        if self.snapshot?.paths.isEmpty == true {
+            do { try await BackgroundService.disable() }
+            catch { self.error = "Folders restored, but the background service could not be removed: " + error.localizedDescription }
+            serviceStatus = BackgroundService.description
+        }
+    }
+
+    func disconnect() async {
+        guard let snapshot else { return }
+        await mutate("disconnect", arguments: ["revision": snapshot.revision], description: "Preparing safe disconnection…")
+    }
+
+    func connect() async {
+        guard let snapshot else { return }
+        await mutate("attach", arguments: ["revision": snapshot.revision], description: "Connecting storage…")
     }
 
     func setAutomation(_ enabled: Bool) async {
@@ -140,6 +156,7 @@ final class StorageModel: ObservableObject {
         isBusy = true
         isMutating = true
         error = nil
+        notice = nil
         results = []
         phase = description
         let mutation = UUID()
@@ -152,8 +169,9 @@ final class StorageModel: ObservableObject {
                 }
             }
             results = response.results ?? []
+            notice = response.message
             if response.allSucceeded == false {
-                error = "Some folders could not be moved. Open Operations to review the outcome."
+                error = "Some folders could not be processed. Open Operations to review each outcome."
                 section = .operations
             }
         } catch { self.error = error.localizedDescription }
