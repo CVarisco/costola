@@ -57,6 +57,7 @@ struct CostolaRootView: View {
 
 struct StorageView: View {
     @EnvironmentObject private var model: StorageModel
+    @State private var choosingDisk = false
 
     var body: some View {
         ScrollView {
@@ -83,6 +84,11 @@ struct StorageView: View {
                                 Text("free on this Mac").font(.caption).foregroundStyle(.secondary)
                             }
                         }.padding(20).background(Color.secondary.opacity(0.08), in: RoundedRectangle(cornerRadius: 12))
+                        if snapshot.paths.isEmpty {
+                            Button(choosingDisk ? "Keep current disk" : "Choose another disk…") { choosingDisk.toggle() }
+                                .disabled(model.isBusy)
+                            if choosingDisk { SetupView() }
+                        }
                     } else { SetupView() }
                 } else if model.isLoading {
                     ProgressView("Loading storage…").padding(.vertical, 30)
@@ -137,6 +143,16 @@ private struct FolderRow: View {
     let entry: CatalogEntry
     @EnvironmentObject private var model: StorageModel
     private var managed: Bool { model.snapshot?.paths.contains(where: { $0.id == entry.id }) == true }
+    private var storageState: String? {
+        if model.snapshot?.pending.contains(entry.id) == true { return "Waiting to migrate" }
+        switch model.snapshot?.paths.first(where: { $0.id == entry.id })?.state {
+        case "external": return "On SSD"
+        case "local-cache": return "Cache available locally"
+        case "requires-disk": return "Unavailable — connect SSD"
+        case "needs-attention": return "Needs attention — open Operations"
+        default: return nil
+        }
+    }
 
     var body: some View {
         HStack(spacing: 14) {
@@ -154,7 +170,7 @@ private struct FolderRow: View {
             }
             Spacer(minLength: 8)
             VStack(alignment: .trailing, spacing: 4) {
-                Text(managed ? "Managed" : entry.allocatedBytes.map(formatBytes) ?? "—").monospacedDigit()
+                Text(storageState ?? entry.allocatedBytes.map(formatBytes) ?? "—").monospacedDigit()
                 Text(entry.kind == "cache" ? "Local cache when offline" : "Requires SSD").font(.caption).foregroundStyle(.secondary)
             }
         }.padding(16)

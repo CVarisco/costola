@@ -11,7 +11,7 @@ from .device import available_volumes, resolve_volume, DeviceError
 from .state import StateError, StateBusyError
 from .storage_manager import StorageError, GIB
 from .macos_copy import CopyError
-from .preflight import PreflightError
+from .preflight import PreflightError, inspect_tree
 
 
 READ_COMMANDS = ('status', 'discover', 'volumes', 'preview')
@@ -87,6 +87,18 @@ def preview(manager, arguments):
     required = sum(max(entry.get('logical_bytes', 0), entry.get('allocated_bytes', 0)) for entry in new) + GIB
     free = None
     preliminary = not manager.online()
+    if not preliminary:
+        specifications = {entry['id']: entry for entry in manager.specs()}
+        for entry in new:
+            target = Path(specifications[entry['id']]['destination'])
+            try:
+                if target.is_symlink():
+                    blockers.append('An external destination is an unexpected link.')
+                elif target.exists():
+                    size = inspect_tree(target)
+                    required += max(size['logical_bytes'], size['allocated_bytes'])
+            except (PreflightError, OSError) as error:
+                blockers.append(str(error))
     device = manager.document['device']
     if not device:
         blockers.append('Choose an external disk.')
@@ -151,7 +163,6 @@ def _perform(manager, command, arguments):
             entry = specifications[identity]
             try:
                 manager.migrate(entry, manager.processes())
-                manager.configure()
                 results.append({'id': identity, 'state': 'external'})
             except (StorageError, StateError, CopyError, PreflightError, OSError) as error:
                 results.append({'id': identity, 'state': 'blocked', 'error': str(error)})

@@ -20,3 +20,11 @@ class DeviceTests(unittest.TestCase):
         for change in ({'Internal': True}, {'FilesystemType': 'msdos'}, {'ReadOnlyVolume': True}):
             with self.subTest(change=change), self.assertRaises(DeviceError):
                 validate_volume({**self.info(), **change})
+
+    def test_current_diskutil_writable_key_is_sufficient_without_readonlyvolume(self):
+        info = self.info()
+        del info['ReadOnlyVolume']
+        self.assertEqual(validate_volume(info)['uuid'], 'identity')
+        del info['Writable']
+        with self.assertRaises(DeviceError):
+            validate_volume(info)

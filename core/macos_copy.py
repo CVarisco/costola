@@ -125,8 +125,10 @@ def manifest(root):
     return {'items': items, 'hardlinks': groups}
 
 
-def verify_manifest(expected, target):
+def verify_manifest(expected, target, *, exact=False):
     actual = manifest(target)
+    if exact and actual != expected:
+        raise CopyError('Source changed after verification; preserve all copies.')
     for relative, metadata in expected['items'].items():
         if actual['items'].get(relative) != metadata:
             raise CopyError('Copy verification failed: ' + relative)

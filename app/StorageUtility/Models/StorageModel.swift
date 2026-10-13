@@ -97,6 +97,14 @@ final class StorageModel: ObservableObject {
         await mutate("add_custom", arguments: ["path": url.path, "revision": snapshot.revision], description: "Checking the folder…")
     }
 
+    func cancelPendingMigrations() async {
+        guard let snapshot, !isBusy else { return }
+        let revoked = Set(snapshot.pending)
+        selection.subtract(revoked)
+        await mutate("select", arguments: ["ids": snapshot.paths.map(\.id), "revision": snapshot.revision],
+                     description: "Cancelling queued migrations…")
+    }
+
     func restore() async {
         guard let snapshot else { return }
         await mutate("restore", arguments: ["revision": snapshot.revision], description: "Preparing restore…")

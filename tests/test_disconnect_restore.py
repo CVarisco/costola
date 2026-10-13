@@ -5,6 +5,7 @@ from unittest.mock import patch
 
 from core.app_manager import AppManager
 from core.storage_manager import StorageError
+from core.state import StateError
 
 
 class DisconnectRestoreTests(unittest.TestCase):
@@ -75,3 +76,37 @@ class DisconnectRestoreTests(unittest.TestCase):
             self.assertEqual([r['state'] for r in result], ['blocked', 'restored-external-copy-retained'])
             self.assertTrue(self.manager.document['automation_enabled'])
             self.assertEqual([e['id'] for e in self.manager.entries], ['first'])
+
+    def test_restore_revokes_unstarted_migrations(self):
+        with self.manager.locked():
+            self.manager.document['pending'] = ['npm']
+            self.manager.document['selected'] = ['npm']
+            self.manager.document['automation_enabled'] = True
+            self.assertEqual(self.manager.restore(), [])
+        state = self.manager.store.read()
+        self.assertEqual(state['pending'], [])
+        self.assertEqual(state['selected'], [])
+        self.assertFalse(state['automation_enabled'])
+
+    def test_prepared_configuration_receipt_keeps_original_inverse(self):
+        path = self.home / '.npmrc'
+        path.write_text('cache=/original\n')
+        with self.manager.locked():
+            self.configure_npm()
+            self.manager.document['configuration_changes']['npm']['phase'] = 'prepared'
+            self.manager.configure()
+            self.manager.restore_configuration('npm')
+        self.assertEqual(path.read_text(), 'cache=/original\n')
+
+    def test_configuration_writer_during_setup_is_preserved(self):
+        path = self.home / '.npmrc'
+        path.write_text('cache=/original\n')
+        from shutil import copy2
+        def concurrent_write(source, target):
+            result = copy2(source, target)
+            source.write_text('cache=/user-new-value\n')
+            return result
+        with self.manager.locked(), patch('core.app_manager.shutil.copy2', side_effect=concurrent_write):
+            with self.assertRaises(StateError):
+                self.configure_npm()
+        self.assertEqual(path.read_text(), 'cache=/user-new-value\n')

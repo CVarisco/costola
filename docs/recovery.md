@@ -17,13 +17,18 @@ Close any reported writers and retry. When Costola confirms its image is detache
 detach. Automatic checks do not immediately remount a manually detached image;
 use **Connect storage**, or physically disconnect and reconnect the disk.
 
-To return to internal storage, use **Restore managed folders**. Costola checks
+To return to internal storage, connect the SSD and use **Restore managed folders**.
+Costola reconciles offline cache data first, stopping on protected-file conflicts, and checks
 space and writers for each folder and verifies its staged copy before replacing
 the link. A partial restore keeps the remaining folders managed. External copies
 are retained. Tool configuration entries still recognizable as Costola's values
 are removed or restored; later user edits are preserved. Automation is disabled
 only after all folders are restored. A failure to unregister the macOS service is
 reported separately; check Settings and macOS Login Items before removing the app.
+
+Use **Cancel queued migrations** in Operations to revoke transfers that have not
+started. Unchecking a folder in a new migration draft does not cancel previously
+authorized work. Already migrated folders must be restored to leave Costola.
 
 Keep the app and `~/Library/Application Support/Costola` until every folder is
 restored and the background item is removed. That private directory contains the

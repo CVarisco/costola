@@ -17,6 +17,11 @@ struct OperationsView: View {
                     }
                 }
                 if let snapshot = model.snapshot {
+                    if !snapshot.pending.isEmpty {
+                        Text("\(snapshot.pending.count) folders are waiting to migrate.")
+                        Button("Cancel queued migrations") { Task { await model.cancelPendingMigrations() } }
+                            .disabled(model.isBusy)
+                    }
                     if snapshot.device != nil {
                         HStack {
                             Button("Connect storage") { Task { await model.connect() } }
@@ -44,7 +49,7 @@ struct OperationsView: View {
                     Divider()
                     Text("Return to this Mac").font(.title2.weight(.semibold))
                     Text("Copy managed folders back to internal storage. External copies are retained for recovery.").foregroundStyle(.secondary)
-                    Button("Restore managed folders…") { showingRestore = true }.disabled(model.isBusy || snapshot.paths.isEmpty)
+                    Button("Restore managed folders…") { showingRestore = true }.disabled(model.isBusy || (snapshot.paths.isEmpty && snapshot.pending.isEmpty))
                 }
             }.padding(28)
         }

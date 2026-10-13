@@ -15,7 +15,7 @@ from .device import disk_info, resolve_volume, validate_volume, DeviceError
 from .state import StateStore, StateError, atomic_write, apply_selection
 from .storage_manager import Manager, StorageError, GIB, lexists, run
 from .preflight import inspect_tree
-from .macos_copy import copy_tree, verify_manifest, sync_tree
+from .macos_copy import copy_tree, verify_manifest, sync_tree, manifest
 
 
 class AppManager(Manager):
@@ -91,6 +91,17 @@ class AppManager(Manager):
                 result['state'] = 'requires-disk'
         return results
 
+    def fallback_needs_flush(self, entry):
+        identity = self.document.get('fallback_sync', {}).get(entry['id'])
+        fallback = self.fallback(entry['source'])
+        if identity and fallback.is_dir():
+            if not re.fullmatch('[a-f0-9]{32}', identity):
+                raise StateError('Invalid fallback receipt; preserve local data for inspection.')
+            expected = json.loads((self.state / 'manifests' / (identity + '.json')).read_text())
+            if manifest(fallback) == expected:
+                return False
+        return super().fallback_needs_flush(entry)
+
     @property
     def has_incomplete_operations(self):
         return any(op['phase'] not in ('completed', 'failed') for op in self.document['operations'].values())
@@ -134,7 +145,6 @@ class AppManager(Manager):
                     continue
                 try:
                     self.migrate(entry, busy)
-                    self.configure()
                     retries.pop(identity, None)
                 except Exception as error:
                     errors.append(str(error))
@@ -143,6 +153,7 @@ class AppManager(Manager):
         # A failed transfer can leave recoverable copies. Do not prune or reroute them.
         interrupted = self.has_incomplete_operations
         paths = [] if interrupted else self.switch_entries(self.entries, online, busy)
+        errors.extend(result['reason'] for result in paths if result['state'] == 'blocked' and 'reason' in result)
         interrupted = self.has_incomplete_operations
         free = shutil.disk_usage(self.home).free
         cleanup = prior.get('cleanup', {})
@@ -277,6 +288,9 @@ class AppManager(Manager):
 
     def _phase(self, operation, phase):
         operation['phase'] = phase
+        if phase == 'completed':
+            operation.pop('error', None)
+            operation.pop('failed_phase', None)
         self.save()
         if self.on_progress:
             self.on_progress({'operation_id': operation['id'], 'entry_id': operation['entry']['id'], 'phase': phase})
@@ -351,7 +365,7 @@ class AppManager(Manager):
             self._record_manifest(operation, expected)
             self._phase(operation, 'verified')
             self.check_writers(entry, local)
-            verify_manifest(expected, local)
+            verify_manifest(expected, local, exact=True)
             if not self.online():
                 raise StorageError('Disk disconnected before publication; source preserved.')
             operation['previous'] = str(target.with_name('.' + target.name + '.previous-' + operation['id']))
@@ -369,27 +383,35 @@ class AppManager(Manager):
             self._sync_parent(source)
             self.entries = [item for item in self.entries if item['id'] != entry['id']] + [entry]
             self._phase(operation, 'linked')
+            self.configure()
             self.check_writers(entry, target)
             if not self.online():
                 raise StorageError('Disk disconnected before cleanup; local backup preserved.')
             verify_manifest(expected, target)
             if backup.exists():
-                verify_manifest(expected, backup)
+                verify_manifest(expected, backup, exact=True)
                 if not self.online():
                     raise StorageError('Disk disconnected; backup retained.')
                 shutil.rmtree(backup)
             elif local_override is not None:
-                verify_manifest(expected, local)
+                verify_manifest(expected, local, exact=True)
                 # Retain the fallback as a recoverable copy until a later verified sweep.
+                self.document.setdefault('fallback_sync', {})[entry['id']] = operation['id']
             self.document['pending'] = [item for item in self.document['pending'] if item != entry['id']]
             self._phase(operation, 'completed')
         except Exception as error:
             operation['error'] = str(error)
+            operation['failed_phase'] = operation['phase']
             self._phase(operation, 'recovery-required')
             raise
 
     def restore(self, dry_run=False):
         results = []
+        if not dry_run:
+            # Returning to local storage revokes queued work before the next agent tick.
+            self.document['pending'] = []
+            self.document['selected'] = [entry['id'] for entry in self.entries]
+            self.save()
         for entry in list(self.entries):
             try:
                 results.append(self._restore_entry(entry, dry_run))
@@ -408,8 +430,15 @@ class AppManager(Manager):
         target = Path(os.readlink(source))
         if target not in (Path(entry['destination']), self.fallback(source)):
             raise StorageError('Unexpected restore link.')
-        if target == Path(entry['destination']) and not self.online():
-            raise StorageError('The external copy is unavailable.')
+        if not self.online():
+            raise StorageError('Connect the selected disk before restoring all managed data.')
+        if target == self.fallback(source):
+            if dry_run:
+                return {'id': entry['id'], 'state': 'would-reconcile-and-restore'}
+            routed = self.switch_entries([entry], True, self.processes())
+            if not routed or routed[0]['state'] != 'external':
+                raise StorageError('Resolve the local cache conflict or active writer before restoring.')
+            target = Path(entry['destination'])
         self.check_writers(entry, target)
         self.check_space([target], restore=True)
         if dry_run:
@@ -426,7 +455,7 @@ class AppManager(Manager):
             self._record_manifest(operation, expected)
             self._phase(operation, 'verified')
             self.check_writers(entry, target)
-            verify_manifest(expected, target)
+            verify_manifest(expected, target, exact=True)
             if target == Path(entry['destination']) and not self.online():
                 raise StorageError('Disk disconnected; restore copy retained.')
             self._phase(operation, 'publishing')
@@ -435,11 +464,14 @@ class AppManager(Manager):
             self._sync_parent(source)
             self._phase(operation, 'published')
             verify_manifest(expected, source)
+            self.check_writers(entry, target)
+            verify_manifest(expected, target, exact=True)
             self._finish_restore(entry, backup)
             self._phase(operation, 'completed')
             return {'id': entry['id'], 'state': 'restored-external-copy-retained'}
         except Exception as error:
             operation['error'] = str(error)
+            operation['failed_phase'] = operation['phase']
             self._phase(operation, 'recovery-required')
             raise
 
@@ -468,10 +500,21 @@ class AppManager(Manager):
                 self.entries = [item for item in self.entries if item['id'] != entry['id']]
             self._phase(operation, 'failed')
             return
+        phase = operation.get('failed_phase', operation['phase'])
+        if (source.is_symlink() and os.readlink(source) == operation.get('original_link') and not lexists(backup)
+                and phase in ('prepared', 'copying', 'verified', 'publishing')):
+            # The original link is still in place; staging is retained for inspection.
+            self._phase(operation, 'failed')
+            return
         expected_path = self.state / 'manifests' / (operation_id + '.json')
         if operation['kind'] == 'restore' and source.is_dir() and not source.is_symlink():
             expected = json.loads(expected_path.read_text())
-            verify_manifest(expected, source)
+            if not self.online():
+                raise StorageError('Reconnect the selected disk to verify restore recovery.')
+            self.check_writers(entry, source)
+            self.check_writers(entry, Path(operation['source']))
+            verify_manifest(expected, Path(operation['source']), exact=True)
+            verify_manifest(expected, source, exact=True)
             self._finish_restore(entry, backup)
             self._phase(operation, 'completed')
             return
@@ -481,13 +524,16 @@ class AppManager(Manager):
             expected = json.loads(expected_path.read_text())
             self.check_writers(entry, Path(entry['destination']))
             verify_manifest(expected, Path(entry['destination']))
+            self.entries = [item for item in self.entries if item['id'] != entry['id']] + [entry]
+            self.configure()
             if backup.exists():
-                verify_manifest(expected, backup)
+                verify_manifest(expected, backup, exact=True)
                 if not self.online():
                     raise StorageError('Disk disconnected; backup retained.')
                 shutil.rmtree(backup)
-            self.entries = [item for item in self.entries if item['id'] != entry['id']] + [entry]
             self.document['pending'] = [item for item in self.document['pending'] if item != entry['id']]
+            if operation['source'] == str(self.fallback(source)):
+                self.document.setdefault('fallback_sync', {})[entry['id']] = operation_id
             self._phase(operation, 'completed')
             return
         if operation['kind'] == 'migrate' and source.is_dir() and not source.is_symlink() and not lexists(backup):
@@ -518,12 +564,17 @@ class AppManager(Manager):
                 changes.append((identity, '.zshrc', re.escape(marker) + '$',
                                 'export ' + variable + '=' + shlex.quote(str(self.home / relative)) + marker))
         for identity, relative, pattern, replacement in changes:
-            if identity in self.document['configuration_changes']:
+            previous = self.document['configuration_changes'].get(identity)
+            if previous and previous['phase'] == 'installed':
                 continue
             path = self.home / relative
             if path.is_symlink():
                 raise StateError('A tool configuration is a symlink; review it before changing paths.')
             before = path.read_text() if path.exists() else ''
+            if previous and previous['phase'] == 'prepared' and previous['introduced_line'] in before.splitlines():
+                previous['phase'] = 'installed'
+                self.save()
+                continue
             lines = before.splitlines()
             originals = [line for line in lines if re.search(pattern, line)]
             after = '\n'.join([line for line in lines if not re.search(pattern, line)] + [replacement]) + '\n'
@@ -537,9 +588,15 @@ class AppManager(Manager):
                 shutil.copy2(path, backup / (identity + '.original'))
             temporary = path.with_name('.' + path.name + '.costola-' + uuid.uuid4().hex)
             try:
-                temporary.write_text(after)
+                with temporary.open('w') as stream:
+                    stream.write(after)
+                    stream.flush()
+                    os.fsync(stream.fileno())
                 temporary.chmod(path.stat().st_mode & 0o777 if path.exists() else 0o600)
+                if path.is_symlink() or (path.read_text() if path.exists() else '') != before:
+                    raise StateError('Tool configuration changed during setup; retry after closing its writer.')
                 os.replace(temporary, path)
+                self._sync_parent(path)
             finally:
                 if temporary.exists():
                     temporary.unlink()
@@ -550,6 +607,8 @@ class AppManager(Manager):
         receipt = self.document['configuration_changes'].get(identity)
         if not receipt or receipt['phase'] in ('restored', 'user-modified'):
             return
+        if receipt['file'] not in ('.npmrc', '.yarnrc', '.zshrc'):
+            raise StateError('Unexpected configuration receipt; preserve it for inspection.')
         path = self.home / receipt['file']
         if path.is_symlink():
             raise StateError('Tool configuration became a symlink; review it before restoring.')

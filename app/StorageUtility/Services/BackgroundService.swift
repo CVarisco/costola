@@ -1,8 +1,9 @@
 import ServiceManagement
+import Foundation
 
 @MainActor
 enum BackgroundService {
-    static var service: SMAppService { .agent(plistName: "com.cvarisco.costola.dev.agent.plist") }
+    static var service: SMAppService { .agent(plistName: (Bundle.main.bundleIdentifier ?? "com.cvarisco.costola.dev") + ".agent.plist") }
     static var description: String {
         switch service.status {
         case .enabled: return "Allowed by macOS"

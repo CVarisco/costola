@@ -4,9 +4,11 @@ import XCTest
 private actor FixtureEngine: EngineServing {
     var commands: [String] = []
     var partialFailure = false
+    var pending = [String]()
     let entry: [String: Any] = ["id": "npm", "source": "/fixture/.npm", "kind": "cache", "offline": "local-cache", "status": "available", "selected": false, "managed": false]
 
     func failOneFolder() { partialFailure = true }
+    func queueMigration() { pending = ["npm"] }
 
     func request<Value: Decodable>(_ command: String, arguments: [String: Any],
                                    onProgress: ((WorkerProgress) -> Void)?) async throws -> Value {
@@ -14,7 +16,7 @@ private actor FixtureEngine: EngineServing {
         let response: [String: Any]
         switch command {
         case "status":
-            response = ["revision": 4, "online": false, "selected": [], "pending": [], "paths": [],
+            response = ["revision": 4, "online": false, "selected": pending, "pending": pending, "paths": [],
                         "settings": ["cache_budget_bytes": 5_368_709_120, "warning_free_percent": 10, "urgent_free_percent": 5],
                         "operations": [], "internal_free_bytes": 1_000_000, "legacy_conflict": false]
         case "discover": response = ["revision": 4, "entries": [entry]]
@@ -27,6 +29,10 @@ private actor FixtureEngine: EngineServing {
             XCTAssertEqual(arguments["revision"] as? Int, 4)
             response = ["revision": 5, "all_succeeded": !partialFailure,
                         "results": [["id": "npm", "state": partialFailure ? "blocked" : "external", "error": "Writer active"]]]
+        case "select":
+            XCTAssertEqual(arguments["ids"] as? [String], [])
+            pending = []
+            response = ["revision": 5]
         default: throw NSError(domain: "Unexpected command", code: 1)
         }
         let decoder = JSONDecoder()
@@ -76,5 +82,19 @@ final class StorageModelTests: XCTestCase {
         XCTAssertEqual(model.results.first?.state, "blocked")
         XCTAssertNotNil(model.error)
         XCTAssertFalse(model.isBusy)
+    }
+
+    func testCancelPendingRevokesAuthorizationWithoutStartingMigration() async {
+        let client = FixtureEngine()
+        await client.queueMigration()
+        let model = StorageModel(client: client)
+        await model.refresh()
+        XCTAssertEqual(model.snapshot?.pending, ["npm"])
+        await model.cancelPendingMigrations()
+        XCTAssertEqual(model.snapshot?.pending, [])
+        XCTAssertFalse(model.selection.contains("npm"))
+        let commands = await client.commands
+        XCTAssertTrue(commands.contains("select"))
+        XCTAssertFalse(commands.contains("migrate"))
     }
 }

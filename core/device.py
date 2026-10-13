@@ -29,8 +29,8 @@ def validate_volume(info):
     if (not isinstance(mount, str) or not Path(mount).is_absolute()
             or not isinstance(uuid, str) or not uuid
             or info.get('Internal') is not False
-            or info.get('ReadOnlyVolume') is not False
-            or info.get('Writable') is False
+            or info.get('ReadOnlyVolume') is True
+            or info.get('Writable') is not True
             or filesystem not in ('apfs', 'exfat')
             or type(size) is not int or size <= 2 * 1024**3):
         raise DeviceError('Choose a writable external APFS or exFAT volume with a verifiable identity.')
