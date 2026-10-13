@@ -37,7 +37,7 @@ struct SettingsView: View {
             Button("Save settings") { Task { await model.saveSettings(budgetGiB: budget, warning: warning, urgent: urgent) } }
                 .disabled(model.isBusy || urgent >= warning)
             Section("About") {
-                Text("Costola · Development build")
+                Text("Costola \(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "")")
                 Link("Source and releases on GitHub", destination: URL(string: "https://github.com/CVarisco/costola")!)
             }
         }.formStyle(.grouped).navigationTitle("Settings")

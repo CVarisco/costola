@@ -11,3 +11,5 @@ xcuserdata/
 *.p12
 *.p8
 *.mobileprovision
+docs/local/
+docs/plans/

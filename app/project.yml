@@ -15,12 +15,14 @@ targets:
       path: StorageUtility/Info.plist
       properties:
         CFBundleDisplayName: Costola
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         NSHighResolutionCapable: true
         NSRemovableVolumesUsageDescription: Costola uses your selected external drive to store the folders you authorize.
         LSApplicationCategoryType: public.app-category.developer-tools
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.cvarisco.costola.dev
+        PRODUCT_BUNDLE_IDENTIFIER: $(COSTOLA_BUNDLE_ID)
         ENABLE_HARDENED_RUNTIME: YES
         CODE_SIGN_ENTITLEMENTS: StorageUtility/StorageUtility.entitlements
     dependencies:
@@ -32,7 +34,7 @@ targets:
     sources: [StorageAgent/main.swift, Shared]
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.cvarisco.costola.dev.agent
+        PRODUCT_BUNDLE_IDENTIFIER: $(COSTOLA_BUNDLE_ID).agent
         ENABLE_HARDENED_RUNTIME: YES
   StorageUtilityTests:
     type: bundle.unit-test
@@ -48,6 +50,28 @@ targets:
         GENERATE_INFOPLIST_FILE: YES
     dependencies:
       - target: Costola
+  CostolaUITestHarness:
+    type: application
+    platform: macOS
+    sources:
+      - path: StorageUtility
+        excludes: [StorageUtilityApp.swift, Info.plist, StorageUtility.entitlements]
+      - Shared
+      - UITestHarness
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.cvarisco.costola.ui-fixture
+        GENERATE_INFOPLIST_FILE: YES
+  StorageUtilityUITests:
+    type: bundle.ui-testing
+    platform: macOS
+    sources: [StorageUtilityUITests]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.cvarisco.costola.ui-tests
+        GENERATE_INFOPLIST_FILE: YES
+    dependencies:
+      - target: CostolaUITestHarness
 schemes:
   StorageUtility:
     build:
@@ -56,3 +80,9 @@ schemes:
         CostolaAgent: all
     test:
       targets: [StorageUtilityTests]
+  StorageFlows:
+    build:
+      targets:
+        CostolaUITestHarness: all
+    test:
+      targets: [StorageUtilityUITests]

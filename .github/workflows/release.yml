@@ -1,0 +1,98 @@
+name: Release candidate
+on:
+  push:
+    tags: ['v*']
+permissions:
+  contents: read
+jobs:
+  checks:
+    uses: ./.github/workflows/checks.yml
+  package:
+    needs: checks
+    environment: release
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15
+            architecture: arm64
+            python_arch: arm64
+          - runner: macos-15-intel
+            architecture: x86_64
+            python_arch: x64
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.14.6'
+          architecture: ${{ matrix.python_arch }}
+      - run: python -m pip install -r packaging/requirements-build.txt
+      - name: Configure temporary signing keychain
+        env:
+          CERTIFICATE_BASE64: ${{ secrets.DEVELOPER_ID_P12_BASE64 }}
+          CERTIFICATE_PASSWORD: ${{ secrets.DEVELOPER_ID_P12_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          set -euo pipefail
+          test -n "$CERTIFICATE_BASE64"
+          KEYCHAIN="$RUNNER_TEMP/costola-signing.keychain-db"
+          PASSWORD="$(openssl rand -hex 32)"
+          echo "::add-mask::$PASSWORD"
+          security create-keychain -p "$PASSWORD" "$KEYCHAIN"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN"
+          security unlock-keychain -p "$PASSWORD" "$KEYCHAIN"
+          printf '%s' "$CERTIFICATE_BASE64" | base64 --decode > "$RUNNER_TEMP/costola-signing.p12"
+          security import "$RUNNER_TEMP/costola-signing.p12" -k "$KEYCHAIN" -P "$CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple: -k "$PASSWORD" "$KEYCHAIN"
+          security list-keychains -d user -s "$KEYCHAIN"
+          security default-keychain -d user -s "$KEYCHAIN"
+          xcrun notarytool store-credentials costola-ci --apple-id "$APPLE_ID" --password "$APPLE_APP_PASSWORD" --team-id "$APPLE_TEAM_ID" --keychain "$KEYCHAIN"
+      - name: Sign, notarize and verify DMG
+        env:
+          COSTOLA_ARCH: ${{ matrix.architecture }}
+          COSTOLA_PYTHON: python
+          COSTOLA_SIGN_IDENTITY: ${{ secrets.DEVELOPER_ID_IDENTITY }}
+          COSTOLA_NOTARY_PROFILE: costola-ci
+        run: scripts/release.sh
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: release-${{ matrix.architecture }}
+          path: |
+            dist/${{ matrix.architecture }}/*.dmg
+            dist/${{ matrix.architecture }}/*.sha256
+            dist/${{ matrix.architecture }}/*-notary.json
+          if-no-files-found: error
+      - name: Remove signing material
+        if: always()
+        run: |
+          security delete-keychain "$RUNNER_TEMP/costola-signing.keychain-db" || true
+          rm -f "$RUNNER_TEMP/costola-signing.p12"
+  draft:
+    needs: package
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          pattern: release-*
+          path: assets
+      - name: Verify both architectures and create a draft only
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          test "$(find assets -name '*.dmg' | wc -l)" -eq 2
+          for directory in assets/release-*; do
+            (cd "$directory" && sha256sum --check -- *.sha256)
+          done
+          printf '%s\n' 'Signed and notarized release candidate. Publication requires the native compatibility matrix and a downloaded-package user test documented in docs/release.md.' > /tmp/release-notes.md
+          gh release create "$RELEASE_TAG" assets/release-*/*.dmg assets/release-*/*.sha256 --draft --verify-tag --title "Costola $RELEASE_TAG" --notes-file /tmp/release-notes.md

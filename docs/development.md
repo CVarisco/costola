@@ -2,8 +2,9 @@
 
 Costola is a macOS app distributed through GitHub Releases. The current bundle
 is a development build with disk selection, folder discovery, migration previews,
-operation history and recovery controls. Automation and release packaging are
-still being completed; do not use it to replace an existing storage installation.
+operation history, recovery, safe disconnection and opt-in background automation.
+Public release qualification is still pending; do not use a development build to
+replace an existing storage installation without the documented transition checks.
 
 ## Build locally
 
@@ -38,7 +39,9 @@ packages**. Do not disable Gatekeeper or strip quarantine to distribute them.
 .venv/bin/python -B -m unittest discover -s tests -v
 xcodebuild test -project app/StorageUtility.xcodeproj -scheme StorageUtility \
   -destination 'platform=macOS' -derivedDataPath build/swift-tests
-COSTOLA_APP="$PWD/build/arm64/Xcode/Build/Products/Debug/Costola.app" \
+xcodebuild test -project app/StorageUtility.xcodeproj -scheme StorageFlows \
+  -destination 'platform=macOS' -derivedDataPath build/ui-tests
+COSTOLA_STORAGE_INTEGRATION=1 COSTOLA_APP="$PWD/build/arm64/Xcode/Build/Products/Debug/Costola.app" \
   .venv/bin/python -B -m unittest discover -s tests/macos -v
 ```
 
@@ -49,6 +52,10 @@ The service test registers and unregisters only its own test agent. It does not
 install Costola's automation or touch the legacy storage agent. If macOS
 requires background-item approval, that test reports a failure rather than
 claiming automation works.
+
+The UI scheme uses a separate fixture app and never calls the storage worker.
+The opt-in storage integration creates disposable APFS and exFAT disk images
+and exercises migration, disconnect, reconnect and restore with real hdiutil.
 
 All storage paths in automated tests are temporary fixtures. Do not use the
 personal SSD or a real developer home as integration-test fixtures.

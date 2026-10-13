@@ -1,0 +1,11 @@
+{
+  "product": "Costola",
+  "version": "0.1.0",
+  "bundle_id": "com.cvarisco.costola",
+  "minimum_macos": "13.0",
+  "architectures": ["arm64", "x86_64"],
+  "python": "3.14.6",
+  "pyinstaller": "6.22.3",
+  "license": "MIT",
+  "public_release_requires": ["Developer ID", "notarization", "stapled tickets", "native compatibility matrix", "downloaded package user test"]
+}

@@ -7,31 +7,52 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		12D7B3CD7B4251A55B583766 /* StorageFlowsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C2DA5E499227B50408AF022 /* StorageFlowsTests.swift */; };
 		2144FE1EC49AAD300CAF406A /* BundleWorker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BB755C941B929B92F458874 /* BundleWorker.swift */; };
 		25678698C3039FC90DBC9716 /* EngineProcessTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9E6801C32FF5D09B20CEEC9 /* EngineProcessTests.swift */; };
 		282C107425F2B98175C1E976 /* StorageModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F2F3E29F325B0A3EC2D74CA /* StorageModelTests.swift */; };
 		39BDCE5BD9B26F2B8AC186EB /* StorageModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 741345BC1B65315DE8EB1257 /* StorageModel.swift */; };
 		3DEB886E122276427A9E9823 /* Notifications.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1BA175F04A7D130EE841B31 /* Notifications.swift */; };
+		4BDF81D81BEDBA5C130E4C6D /* MenuBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0ABF4E8CE00C68444CC1317 /* MenuBarView.swift */; };
 		50317E43E9335E978F19F84E /* StorageUtilityApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36E20913BB87769E832F764F /* StorageUtilityApp.swift */; };
 		52789BC6B82D1D6DC768D724 /* WorkerStream.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62B7B6213AFCB88081FCB79F /* WorkerStream.swift */; };
 		53205A79C326D4C375A8F4DB /* StorageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 265542EDDE244821EBA432D5 /* StorageView.swift */; };
+		5C64311ACE6E9857D1F4C80A /* EngineMessages.swift in Sources */ = {isa = PBXBuildFile; fileRef = 452020F0DB4AE0490A93DC0F /* EngineMessages.swift */; };
 		6D34033BE20EC2A9BEADB831 /* EngineMessages.swift in Sources */ = {isa = PBXBuildFile; fileRef = 452020F0DB4AE0490A93DC0F /* EngineMessages.swift */; };
 		79596CE2C4C30258D7BB8D5D /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17678DE3CDFE277CE0B2A103 /* SettingsView.swift */; };
 		8E93B2B94E03948FD0AFCEC5 /* BundleLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6227417A3AE1FFE1D24E4B2 /* BundleLaunchTests.swift */; };
 		94302DB43DE625AB43B38D6E /* SetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 188A39D6100DDDBB7D92CD9F /* SetupView.swift */; };
+		97366A5EE8C902881DB2342E /* StorageModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 741345BC1B65315DE8EB1257 /* StorageModel.swift */; };
 		9A425B211A78DFD68A1A2C97 /* BackgroundService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 696EDA0ACBBE77F2FF020F2F /* BackgroundService.swift */; };
+		9B911FCC197F49D9A6DEB8A6 /* Notifications.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1BA175F04A7D130EE841B31 /* Notifications.swift */; };
 		9CB2639434D77942960F661A /* Notifications.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1BA175F04A7D130EE841B31 /* Notifications.swift */; };
+		9DFB28CF2551E5073B6102DF /* FixtureApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FFFFDD86EF6F201F68F80DC /* FixtureApp.swift */; };
 		ADB6E4AE73EC3C06A9D1814B /* BundleWorker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BB755C941B929B92F458874 /* BundleWorker.swift */; };
+		AF625DB00CE2083423EA5838 /* StorageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 265542EDDE244821EBA432D5 /* StorageView.swift */; };
 		B3988D0539DF936DDC0D6871 /* MenuBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0ABF4E8CE00C68444CC1317 /* MenuBarView.swift */; };
 		B94FFE59F98BFD524C18C54C /* EngineClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA1B27B7A7CEAEB39D7A24B0 /* EngineClient.swift */; };
+		C056F83F7426F93E6745882B /* WorkerStream.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62B7B6213AFCB88081FCB79F /* WorkerStream.swift */; };
+		C38A30F8F4F8579D66C201D8 /* BundleWorker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BB755C941B929B92F458874 /* BundleWorker.swift */; };
+		D40CD3A779D4CE5E9CC81FAF /* BackgroundService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 696EDA0ACBBE77F2FF020F2F /* BackgroundService.swift */; };
+		D4D146688244E72C18173FC4 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17678DE3CDFE277CE0B2A103 /* SettingsView.swift */; };
 		DE504FDA8CABA177064479FE /* EngineClientTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B038A8FFEF44BF11338D60D6 /* EngineClientTests.swift */; };
+		E0FD813D5854FBFA2D2896AC /* OperationsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8DF2ABBADCBF4F3648FECB6D /* OperationsView.swift */; };
+		E180BA7F623B7564F37939A6 /* EngineClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA1B27B7A7CEAEB39D7A24B0 /* EngineClient.swift */; };
 		EE881FF76511D31BD2403F97 /* protocol in Resources */ = {isa = PBXBuildFile; fileRef = 5556A81581514EB3E5B322EC /* protocol */; };
 		F4F617DD4BF4159B9C2B3078 /* WorkerStream.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62B7B6213AFCB88081FCB79F /* WorkerStream.swift */; };
 		F55D9BA9121742DEBD870755 /* OperationsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8DF2ABBADCBF4F3648FECB6D /* OperationsView.swift */; };
+		FEAFC07E1DD4550B07AE8069 /* SetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 188A39D6100DDDBB7D92CD9F /* SetupView.swift */; };
 		FECB57FD81B86CD0160694CB /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = E943BB0D11B4AC56EE8D5979 /* main.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		30593A3DBC0A432EA8061B95 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0FE4C719DBFC53F93A7D9D99 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = F9F6673EE6F65D40EECACACB;
+			remoteInfo = CostolaUITestHarness;
+		};
 		D7A35EF91928D8C5B5F6C5C3 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 0FE4C719DBFC53F93A7D9D99 /* Project object */;
@@ -53,6 +74,7 @@
 		188A39D6100DDDBB7D92CD9F /* SetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetupView.swift; sourceTree = "<group>"; };
 		1EEC1851AC0A73E6E4FA61BB /* StorageUtilityTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = StorageUtilityTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		265542EDDE244821EBA432D5 /* StorageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorageView.swift; sourceTree = "<group>"; };
+		2C2DA5E499227B50408AF022 /* StorageFlowsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorageFlowsTests.swift; sourceTree = "<group>"; };
 		2CB8608AFE8A996497009FDD /* StorageUtility.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = StorageUtility.entitlements; sourceTree = "<group>"; };
 		3260216EF08D9F70EEBA2A4E /* Costola.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Costola.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		36E20913BB87769E832F764F /* StorageUtilityApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorageUtilityApp.swift; sourceTree = "<group>"; };
@@ -63,10 +85,13 @@
 		5F2F3E29F325B0A3EC2D74CA /* StorageModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorageModelTests.swift; sourceTree = "<group>"; };
 		62B7B6213AFCB88081FCB79F /* WorkerStream.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkerStream.swift; sourceTree = "<group>"; };
 		696EDA0ACBBE77F2FF020F2F /* BackgroundService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackgroundService.swift; sourceTree = "<group>"; };
+		6FFFFDD86EF6F201F68F80DC /* FixtureApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FixtureApp.swift; sourceTree = "<group>"; };
 		741345BC1B65315DE8EB1257 /* StorageModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorageModel.swift; sourceTree = "<group>"; };
 		8DF2ABBADCBF4F3648FECB6D /* OperationsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OperationsView.swift; sourceTree = "<group>"; };
 		9BB755C941B929B92F458874 /* BundleWorker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BundleWorker.swift; sourceTree = "<group>"; };
 		A0ABF4E8CE00C68444CC1317 /* MenuBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarView.swift; sourceTree = "<group>"; };
+		A6D2833FC11D83515E91761B /* StorageUtilityUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = StorageUtilityUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		A8F5C3E5C31CDEA7743DD925 /* CostolaUITestHarness.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CostolaUITestHarness.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B038A8FFEF44BF11338D60D6 /* EngineClientTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EngineClientTests.swift; sourceTree = "<group>"; };
 		BA1B27B7A7CEAEB39D7A24B0 /* EngineClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EngineClient.swift; sourceTree = "<group>"; };
 		C9E6801C32FF5D09B20CEEC9 /* EngineProcessTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EngineProcessTests.swift; sourceTree = "<group>"; };
@@ -77,6 +102,14 @@
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
+		0765653CCF3F2523ED211FC6 /* UITestHarness */ = {
+			isa = PBXGroup;
+			children = (
+				6FFFFDD86EF6F201F68F80DC /* FixtureApp.swift */,
+			);
+			path = UITestHarness;
+			sourceTree = "<group>";
+		};
 		19D2EAB2915F76FA80E49409 /* StorageUtility */ = {
 			isa = PBXGroup;
 			children = (
@@ -99,8 +132,18 @@
 				D124067BB00B35CCBFEBE60F /* StorageAgent */,
 				19D2EAB2915F76FA80E49409 /* StorageUtility */,
 				8FA0D3D12D8D891742172CD6 /* StorageUtilityTests */,
+				4B9B6097D4D7A36EC44769DC /* StorageUtilityUITests */,
+				0765653CCF3F2523ED211FC6 /* UITestHarness */,
 				A30F6EAD7A931B5CA57DD1DC /* Products */,
 			);
+			sourceTree = "<group>";
+		};
+		4B9B6097D4D7A36EC44769DC /* StorageUtilityUITests */ = {
+			isa = PBXGroup;
+			children = (
+				2C2DA5E499227B50408AF022 /* StorageFlowsTests.swift */,
+			);
+			path = StorageUtilityUITests;
 			sourceTree = "<group>";
 		};
 		648DF2C66AB5CDC502ECE926 /* Shared */ = {
@@ -150,7 +193,9 @@
 			children = (
 				3260216EF08D9F70EEBA2A4E /* Costola.app */,
 				5B0BCB0FC205FB82E7ABFE98 /* CostolaAgent */,
+				A8F5C3E5C31CDEA7743DD925 /* CostolaUITestHarness.app */,
 				1EEC1851AC0A73E6E4FA61BB /* StorageUtilityTests.xctest */,
+				A6D2833FC11D83515E91761B /* StorageUtilityUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -203,6 +248,24 @@
 			productReference = 1EEC1851AC0A73E6E4FA61BB /* StorageUtilityTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
+		A61D00472BB00C0B6A119A6C /* StorageUtilityUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 87690D8E63F1DE3D74ABFA24 /* Build configuration list for PBXNativeTarget "StorageUtilityUITests" */;
+			buildPhases = (
+				E2DA8FFED5CDA4357D42A8A0 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				F3FD2A5E848F182A5A4E8C12 /* PBXTargetDependency */,
+			);
+			name = StorageUtilityUITests;
+			packageProductDependencies = (
+			);
+			productName = StorageUtilityUITests;
+			productReference = A6D2833FC11D83515E91761B /* StorageUtilityUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 		B3959B84536C7B60D117CD40 /* CostolaAgent */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 6FA2FAF5AA892006FFC27F37 /* Build configuration list for PBXNativeTarget "CostolaAgent" */;
@@ -238,6 +301,23 @@
 			productReference = 3260216EF08D9F70EEBA2A4E /* Costola.app */;
 			productType = "com.apple.product-type.application";
 		};
+		F9F6673EE6F65D40EECACACB /* CostolaUITestHarness */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 99DC144BB19FA5F0BA3F4DEE /* Build configuration list for PBXNativeTarget "CostolaUITestHarness" */;
+			buildPhases = (
+				4BBE510D4D36984741B96361 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = CostolaUITestHarness;
+			packageProductDependencies = (
+			);
+			productName = CostolaUITestHarness;
+			productReference = A8F5C3E5C31CDEA7743DD925 /* CostolaUITestHarness.app */;
+			productType = "com.apple.product-type.application";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -250,10 +330,17 @@
 					7475BA25D64D013C6D33C7FA = {
 						ProvisioningStyle = Manual;
 					};
+					A61D00472BB00C0B6A119A6C = {
+						ProvisioningStyle = Manual;
+						TestTargetID = F9F6673EE6F65D40EECACACB;
+					};
 					B3959B84536C7B60D117CD40 = {
 						ProvisioningStyle = Manual;
 					};
 					E9601715E9601E076C428193 = {
+						ProvisioningStyle = Manual;
+					};
+					F9F6673EE6F65D40EECACACB = {
 						ProvisioningStyle = Manual;
 					};
 				};
@@ -275,6 +362,8 @@
 				E9601715E9601E076C428193 /* Costola */,
 				B3959B84536C7B60D117CD40 /* CostolaAgent */,
 				7475BA25D64D013C6D33C7FA /* StorageUtilityTests */,
+				F9F6673EE6F65D40EECACACB /* CostolaUITestHarness */,
+				A61D00472BB00C0B6A119A6C /* StorageUtilityUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -291,6 +380,26 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		4BBE510D4D36984741B96361 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D40CD3A779D4CE5E9CC81FAF /* BackgroundService.swift in Sources */,
+				C38A30F8F4F8579D66C201D8 /* BundleWorker.swift in Sources */,
+				E180BA7F623B7564F37939A6 /* EngineClient.swift in Sources */,
+				5C64311ACE6E9857D1F4C80A /* EngineMessages.swift in Sources */,
+				9DFB28CF2551E5073B6102DF /* FixtureApp.swift in Sources */,
+				4BDF81D81BEDBA5C130E4C6D /* MenuBarView.swift in Sources */,
+				9B911FCC197F49D9A6DEB8A6 /* Notifications.swift in Sources */,
+				E0FD813D5854FBFA2D2896AC /* OperationsView.swift in Sources */,
+				D4D146688244E72C18173FC4 /* SettingsView.swift in Sources */,
+				FEAFC07E1DD4550B07AE8069 /* SetupView.swift in Sources */,
+				97366A5EE8C902881DB2342E /* StorageModel.swift in Sources */,
+				AF625DB00CE2083423EA5838 /* StorageView.swift in Sources */,
+				C056F83F7426F93E6745882B /* WorkerStream.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		546458C98F888E8D5FD4C631 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -322,6 +431,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		E2DA8FFED5CDA4357D42A8A0 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				12D7B3CD7B4251A55B583766 /* StorageFlowsTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		FDCC60486D294B252EB7ED0A /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -346,9 +463,31 @@
 			target = B3959B84536C7B60D117CD40 /* CostolaAgent */;
 			targetProxy = DB4F2DBDCEABDB9E6AEB14D5 /* PBXContainerItemProxy */;
 		};
+		F3FD2A5E848F182A5A4E8C12 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = F9F6673EE6F65D40EECACACB /* CostolaUITestHarness */;
+			targetProxy = 30593A3DBC0A432EA8061B95 /* PBXContainerItemProxy */;
+		};
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		137CADF2D36383E59D5BB62B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "com.cvarisco.costola.ui-tests";
+				SDKROOT = macosx;
+				TEST_TARGET_NAME = CostolaUITestHarness;
+			};
+			name = Debug;
+		};
 		15668C70C94BAF6A3E157C90 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -378,10 +517,27 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.cvarisco.costola.dev;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(COSTOLA_BUNDLE_ID)";
 				SDKROOT = macosx;
 			};
 			name = Debug;
+		};
+		319517769E4F292E8606B063 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "com.cvarisco.costola.ui-tests";
+				SDKROOT = macosx;
+				TEST_TARGET_NAME = CostolaUITestHarness;
+			};
+			name = Release;
 		};
 		3892B62794B937DE22D50D01 /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -392,10 +548,26 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.cvarisco.costola.dev.agent;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(COSTOLA_BUNDLE_ID).agent";
 				SDKROOT = macosx;
 			};
 			name = Debug;
+		};
+		38DC71F23C5925B30D50DAB3 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = StorageUtility/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "com.cvarisco.costola.ui-fixture";
+				SDKROOT = macosx;
+			};
+			name = Release;
 		};
 		5AA763276CB11DFC66189D90 /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -471,10 +643,26 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.cvarisco.costola.dev;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(COSTOLA_BUNDLE_ID)";
 				SDKROOT = macosx;
 			};
 			name = Release;
+		};
+		97076DDB6827384D76C8A0B5 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = StorageUtility/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "com.cvarisco.costola.ui-fixture";
+				SDKROOT = macosx;
+			};
+			name = Debug;
 		};
 		C39D55BC3682ADA67C6AC972 /* Release */ = {
 			isa = XCBuildConfiguration;
@@ -557,7 +745,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.cvarisco.costola.dev.agent;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(COSTOLA_BUNDLE_ID).agent";
 				SDKROOT = macosx;
 			};
 			name = Release;
@@ -588,6 +776,24 @@
 			buildConfigurations = (
 				3892B62794B937DE22D50D01 /* Debug */,
 				EB60B929167CCF943D292736 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		87690D8E63F1DE3D74ABFA24 /* Build configuration list for PBXNativeTarget "StorageUtilityUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				137CADF2D36383E59D5BB62B /* Debug */,
+				319517769E4F292E8606B063 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		99DC144BB19FA5F0BA3F4DEE /* Build configuration list for PBXNativeTarget "CostolaUITestHarness" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				97076DDB6827384D76C8A0B5 /* Debug */,
+				38DC71F23C5925B30D50DAB3 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
