@@ -2,61 +2,33 @@ import SwiftUI
 
 @main
 struct CostolaApp: App {
+    @StateObject private var model = StorageModel()
+    @NSApplicationDelegateAdaptor(CostolaDelegate.self) private var delegate
+
     var body: some Scene {
-        WindowGroup("Costola", id: "storage") {
-            BundleCheckView()
-                .frame(minWidth: 560, minHeight: 360)
+        Window("Costola", id: "storage") {
+            CostolaRootView().environmentObject(model)
+                .onAppear { delegate.model = model }
+                .frame(minWidth: 820, minHeight: 570)
         }
+        .defaultSize(width: 1040, height: 720)
         MenuBarExtra("Costola", systemImage: "externaldrive") {
-            OpenCostolaButton()
-            Divider()
-            Button("Quit Costola") { NSApplication.shared.terminate(nil) }
-                .keyboardShortcut("q")
+            MenuBarView().environmentObject(model)
         }
     }
 }
 
-private struct OpenCostolaButton: View {
-    @Environment(\.openWindow) private var openWindow
-    var body: some View {
-        Button("Open Costola") {
-            openWindow(id: "storage")
-            NSApplication.shared.activate(ignoringOtherApps: true)
-        }
-    }
-}
-
-private struct BundleCheckView: View {
-    @State private var result = "Checking the bundled engine…"
-    @State private var ready = false
-    @State private var checking = true
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            Label("Costola", systemImage: "externaldrive.fill")
-                .font(.largeTitle.weight(.semibold))
-            Text("More room for your work.")
-                .font(.title2).foregroundStyle(.secondary)
-            Divider()
-            Label(result, systemImage: checking ? "hourglass" : (ready ? "checkmark.circle" : "exclamationmark.triangle"))
-                .textSelection(.enabled)
-            Text("Development build · Storage setup is not available yet.")
-                .font(.callout).foregroundStyle(.secondary)
-            Spacer()
-        }
-        .padding(32)
-        .task {
-            let appURL = Bundle.main.bundleURL
-            do {
-                let response = try await Task.detached {
-                    try BundleWorker.probe(appURL: appURL).0
-                }.value
-                result = "Engine ready · \(response.data!.architecture) · Python \(response.data!.pythonVersion)"
-                ready = true
-            } catch {
-                result = error.localizedDescription
-            }
-            checking = false
-        }
+@MainActor
+final class CostolaDelegate: NSObject, NSApplicationDelegate {
+    weak var model: StorageModel?
+    func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { false }
+    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        guard model?.isMutating == true else { return .terminateNow }
+        let alert = NSAlert()
+        alert.messageText = "An operation is still running"
+        alert.informativeText = "Wait for it to finish before quitting Costola. You can close the window while it runs."
+        alert.addButton(withTitle: "Keep Costola open")
+        alert.runModal()
+        return .terminateCancel
     }
 }

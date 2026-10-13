@@ -2,7 +2,12 @@ import Foundation
 
 struct EnginePayload<Value: Decodable>: Decodable { let data: Value }
 
-final class EngineClient: @unchecked Sendable {
+protocol EngineServing: Sendable {
+    func request<Value: Decodable>(_ command: String, arguments: [String: Any],
+                                    onProgress: ((WorkerProgress) -> Void)?) async throws -> Value
+}
+
+final class EngineClient: EngineServing, @unchecked Sendable {
     let appURL: URL
 
     init(appURL: URL = Bundle.main.bundleURL) { self.appURL = appURL }

@@ -1,8 +1,9 @@
 # Costola development
 
 Costola is a macOS app distributed through GitHub Releases. The current bundle
-is an early development build: it checks its included engine but does not yet
-offer storage setup or migration.
+is a development build with disk selection, folder discovery, migration previews,
+operation history and recovery controls. Automation and release packaging are
+still being completed; do not use it to replace an existing storage installation.
 
 ## Build locally
 
