@@ -4,10 +4,15 @@ import SwiftUI
 @main
 struct FixtureApp: App {
     @StateObject private var model = StorageModel(client: FixtureEngine())
+    private let compact = ProcessInfo.processInfo.arguments.contains("-compact")
     var body: some Scene {
         Window("Costola fixture", id: "storage") {
-            CostolaRootView().environmentObject(model).frame(minWidth: 820, minHeight: 570)
-        }.defaultSize(width: 1040, height: 720)
+            CostolaRootView().environmentObject(model)
+                .frame(minWidth: 820, maxWidth: compact ? 820 : .infinity,
+                       minHeight: 570, maxHeight: compact ? 570 : .infinity)
+                .preferredColorScheme(ProcessInfo.processInfo.arguments.contains("-dark") ? .dark : nil)
+        }.defaultSize(width: compact ? 820 : 1040, height: compact ? 570 : 720)
+            .windowResizability(.contentSize)
     }
 }
 

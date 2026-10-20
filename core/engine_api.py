@@ -115,7 +115,7 @@ def preview(manager, arguments):
     return {'revision': manager.document['revision'], 'entries': selected, 'logical_bytes': logical,
             'estimated_reclaimable_bytes': allocated, 'required_bytes': required, 'external_free_bytes': free,
             'preliminary': preliminary, 'ready': not blockers, 'blockers': blockers,
-            'note': 'Space reclaimed is an estimate; APFS snapshots and shared hard links can delay reclamation.'}
+            'note': 'The space you free is an estimate. macOS snapshots and files sharing the same disk data can delay when it appears as free.'}
 
 
 def _perform(manager, command, arguments):

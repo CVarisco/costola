@@ -5,9 +5,9 @@ struct MenuBarView: View {
     @Environment(\.openWindow) private var openWindow
 
     var body: some View {
-        Text(model.isBusy ? model.phase : model.snapshot?.online == true ? "External storage available" : "External storage not mounted")
+        Text(model.isBusy ? model.phase : model.snapshot?.online == true ? "SSD storage ready" : "SSD storage unavailable")
         Button("Open Costola") { show(.storage) }
-        Button("Operations and recovery") { show(.operations) }
+        Button("Transfers & recovery") { show(.operations) }
         Button("Refresh status") { Task { await model.refresh(includeCatalog: false) } }.disabled(model.isBusy)
         Divider()
         Button("Quit Costola") { NSApplication.shared.terminate(nil) }.keyboardShortcut("q")

@@ -2,7 +2,7 @@ import AppKit
 import SwiftUI
 
 enum AppSection: String, CaseIterable, Identifiable {
-    case storage = "Storage", operations = "Operations", settings = "Settings"
+    case storage = "Storage", operations = "Transfers & recovery", settings = "Settings"
     var id: String { rawValue }
     var icon: String {
         switch self {
@@ -84,7 +84,7 @@ final class StorageModel: ObservableObject {
         guard let preview, preview.ready, !isBusy else { return }
         let arguments: [String: Any] = ["ids": preview.entries.map(\.id), "revision": preview.revision]
         self.preview = nil
-        await mutate("migrate", arguments: arguments, description: "Preparing migration…")
+        await mutate("migrate", arguments: arguments, description: "Preparing to move folders…")
     }
 
     func chooseDisk(_ volume: Volume) async {
@@ -102,7 +102,7 @@ final class StorageModel: ObservableObject {
         let revoked = Set(snapshot.pending)
         selection.subtract(revoked)
         await mutate("select", arguments: ["ids": snapshot.paths.map(\.id), "revision": snapshot.revision],
-                     description: "Cancelling queued migrations…")
+                     description: "Cancelling queued moves…")
     }
 
     func restore() async {
@@ -138,7 +138,7 @@ final class StorageModel: ObservableObject {
 
     func enableNotifications() async {
         do {
-            if try await !Notifications.authorize() { error = "Notifications are disabled in System Settings." }
+            if try await !Notifications.authorize() { error = "Allow notifications for Costola in System Settings → Notifications." }
         } catch { self.error = error.localizedDescription }
     }
 
@@ -151,7 +151,7 @@ final class StorageModel: ObservableObject {
         guard let snapshot else { return }
         let bytes = budgetGiB * 1_073_741_824
         guard bytes.isFinite, bytes >= 0, bytes < Double(Int64.max), urgent < warning else {
-            error = "Enter a nonnegative cache budget and an urgent threshold below the warning threshold."
+            error = "Enter a cache limit of zero or more. Set urgent cleanup below the warning percentage."
             return
         }
         await mutate("settings", arguments: ["revision": snapshot.revision, "settings": [
@@ -179,7 +179,7 @@ final class StorageModel: ObservableObject {
             results = response.results ?? []
             notice = response.message
             if response.allSucceeded == false {
-                error = "Some folders could not be processed. Open Operations to review each outcome."
+                error = "Some folders could not be moved or restored. Check Transfers & recovery for each folder's result and next steps."
                 section = .operations
             }
         } catch { self.error = error.localizedDescription }

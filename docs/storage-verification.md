@@ -1,5 +1,27 @@
 # Costola verification
 
+## UI development checks — 2026-10-20
+
+The storage screen now guides disk choice, folder selection and review, with a
+selection summary outside the scrolling content. The preview names the disk and
+explains offline availability; Operations shows folder names and readable outcomes.
+Settings explains invalid budgets and threshold combinations.
+The copy now leads with freeing space on the Mac, explains which folders need
+the SSD connected, and names the transfer/recovery actions. The preview explains
+the 1 GiB safety margin and keeps the reclaimed-space estimate qualified.
+
+- Python regression suite: **92 tests passed**.
+- Swift unit/model suite: **14 tests passed**.
+- The UI fixture checks explicit selection, preview/back navigation without losing
+  selection, partial failure and restore errors. A second flow checks dark mode
+  at the minimum content size (820 × 570), including clickable review and
+  confirmation buttons. Window-only screenshots are attached to the test results.
+- The compact test exposed a hit-testing problem with a bottom safe-area inset.
+  Keeping the selection bar outside the scroll view resolved it.
+
+These checks use the simulated UI engine and do not qualify real SSD behavior,
+VoiceOver operation, or public release packages.
+
 ## Development evidence — 2026-10-13
 
 Checks use temporary homes, controlled data and disposable disk images. The
